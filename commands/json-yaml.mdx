@@ -1,0 +1,451 @@
+---
+title: JSON, YAML & MSGPACK Commands
+description: Format, validate, and convert between JSON, YAML, and MSGPACK data formats
+---
+
+Work with structured data formats including JSON, YAML, and MessagePack.
+
+## Available Commands
+
+<CardGroup cols={2}>
+  <Card title="json" icon="brackets-curly">
+    Format and pretty-print JSON
+  </Card>
+  
+  <Card title="json-yaml" icon="arrow-right">
+    Convert JSON to YAML
+  </Card>
+  
+  <Card title="yaml-json" icon="arrow-left">
+    Convert YAML to JSON
+  </Card>
+  
+  <Card title="json-escape" icon="shield">
+    Escape JSON string
+  </Card>
+  
+  <Card title="json-unescape" icon="shield-slash">
+    Unescape JSON string
+  </Card>
+  
+  <Card title="json-msgpack" icon="box">
+    Convert JSON to MSGPACK
+  </Card>
+  
+  <Card title="msgpack-json" icon="box-open">
+    Convert MSGPACK to JSON
+  </Card>
+</CardGroup>
+
+---
+
+## Format JSON
+
+<Card title="json" icon="brackets-curly">
+  Format and validate JSON with optional indentation
+</Card>
+
+### Usage
+
+```bash
+# Minify JSON (compact format)
+echo '{"name":"John","age":30}' | sttr json
+# Output: {"name":"John","age":30}
+
+# Pretty-print JSON with indentation
+echo '{"name":"John","age":30}' | sttr json -i
+# Output:
+# {
+#   "name": "John",
+#   "age": 30
+# }
+
+# Format JSON from file
+cat data.json | sttr json -i
+
+# Validate JSON (will error if invalid)
+echo '{invalid}' | sttr json
+# Error: invalid character...
+
+# Format nested JSON
+echo '{"user":{"name":"John","address":{"city":"NYC"}}}' | sttr json -i
+# Output:
+# {
+#   "user": {
+#     "name": "John",
+#     "address": {
+#       "city": "NYC"
+#     }
+#   }
+# }
+```
+
+**Flags:**
+- `-i, --indent` - Pretty-print with 2-space indentation (default: false)
+
+**Use cases:**
+- Validate JSON syntax
+- Format JSON for readability
+- Minify JSON for production
+- Debug API responses
+
+---
+
+## JSON to YAML
+
+<Card title="json-yaml" icon="arrow-right">
+  Convert JSON to YAML format
+</Card>
+
+### Usage
+
+```bash
+# Convert JSON to YAML
+echo '{"name":"John","age":30}' | sttr json-yaml
+# Output:
+# name: John
+# age: 30
+
+# Convert nested JSON
+echo '{"user":{"name":"John","email":"john@example.com"}}' | sttr json-yaml
+# Output:
+# user:
+#   name: John
+#   email: john@example.com
+
+# Convert array
+echo '["apple","banana","cherry"]' | sttr json-yaml
+# Output:
+# - apple
+# - banana
+# - cherry
+
+# Convert from file
+cat config.json | sttr json-yaml > config.yaml
+```
+
+**Aliases:** `json-yml`
+
+**Use cases:**
+- Convert JSON config to YAML
+- Migrate configuration files
+- Generate Kubernetes manifests
+- Create Docker Compose files
+
+---
+
+## YAML to JSON
+
+<Card title="yaml-json" icon="arrow-left">
+  Convert YAML to JSON format
+</Card>
+
+### Usage
+
+```bash
+# Convert YAML to JSON (minified)
+echo -e "name: John\nage: 30" | sttr yaml-json
+# Output: {"name":"John","age":30}
+
+# Convert YAML to pretty JSON
+echo -e "name: John\nage: 30" | sttr yaml-json -i
+# Output:
+# {
+#   "name": "John",
+#   "age": 30
+# }
+
+# Convert complex YAML
+cat <<EOF | sttr yaml-json -i
+server:
+  host: localhost
+  port: 8080
+  ssl: true
+EOF
+# Output:
+# {
+#   "server": {
+#     "host": "localhost",
+#     "port": 8080,
+#     "ssl": true
+#   }
+# }
+
+# Convert from file
+cat docker-compose.yml | sttr yaml-json -i > config.json
+```
+
+**Aliases:** `yml-json`
+
+**Flags:**
+- `-i, --indent` - Pretty-print output with indentation
+
+**Use cases:**
+- Parse YAML configs in JSON-only tools
+- Convert Kubernetes YAML to JSON
+- API integration
+- Data migration
+
+---
+
+## JSON Escape
+
+<Card title="json-escape" icon="shield">
+  Escape JSON string for embedding
+</Card>
+
+### Usage
+
+```bash
+# Escape JSON for embedding in JSON
+echo '{"name":"John"}' | sttr json-escape
+# Output: {\"name\":\"John\"}
+
+# Escape for string field
+echo '{"error":"Something failed"}' | sttr json-escape
+# Can be used as: {"message":"{\"error\":\"Something failed\"}"}
+
+# Escape nested JSON
+cat data.json | sttr json-escape
+```
+
+**Aliases:** `json-esc`
+
+**Use cases:**
+- Embed JSON in JSON strings
+- Escape API payloads
+- Store JSON in databases
+- Logging structured data
+
+---
+
+## JSON Unescape
+
+<Card title="json-unescape" icon="shield-slash">
+  Unescape JSON string
+</Card>
+
+### Usage
+
+```bash
+# Unescape JSON string (minified)
+echo '{\"name\":\"John\"}' | sttr json-unescape
+# Output: {"name":"John"}
+
+# Unescape and pretty-print
+echo '{\"name\":\"John\"}' | sttr json-unescape -i
+# Output:
+# {
+#   "name": "John"
+# }
+
+# Extract nested JSON from logs
+echo 'Log: {\"error\":{\"code\":500}}' | \
+  grep -oE '\{.*\}' | sttr json-unescape -i
+```
+
+**Aliases:** `json-unesc`
+
+**Flags:**
+- `-i, --indent` - Pretty-print output with indentation
+
+**Use cases:**
+- Parse escaped JSON from logs
+- Decode API responses
+- Extract nested JSON
+- Debug escaped JSON strings
+
+---
+
+## JSON to MSGPACK
+
+<Card title="json-msgpack" icon="box">
+  Convert JSON to MessagePack binary format
+</Card>
+
+### Usage
+
+```bash
+# Convert JSON to MSGPACK
+echo '{"name":"John","age":30}' | sttr json-msgpack
+# Output: (binary data)
+
+# Save to file
+echo '{"data":"value"}' | sttr json-msgpack > data.msgpack
+
+# Convert config file
+cat config.json | sttr json-msgpack > config.msgpack
+```
+
+**Use cases:**
+- Compress JSON data
+- Network transmission optimization
+- Binary data storage
+- Inter-service communication
+- Cache serialization
+
+**Note:** MessagePack is a binary format that's more compact than JSON.
+
+---
+
+## MSGPACK to JSON
+
+<Card title="msgpack-json" icon="box-open">
+  Convert MessagePack to JSON format
+</Card>
+
+### Usage
+
+```bash
+# Convert MSGPACK to JSON
+cat data.msgpack | sttr msgpack-json
+# Output: {"name":"John","age":30}
+
+# Convert and pretty-print
+cat data.msgpack | sttr msgpack-json | sttr json -i
+
+# Inspect MSGPACK file
+cat binary.msgpack | sttr msgpack-json -i
+```
+
+**Use cases:**
+- Debug MessagePack data
+- Convert binary to readable format
+- Data inspection
+- Format conversion
+
+---
+
+## Practical Examples
+
+### Configuration Management
+
+```bash
+# Convert JSON config to YAML for Kubernetes
+cat app-config.json | sttr json-yaml > deployment.yaml
+
+# Convert Docker Compose YAML to JSON
+cat docker-compose.yml | sttr yaml-json -i > docker-config.json
+
+# Validate and format config
+cat config.json | sttr json -i > config.formatted.json
+```
+
+### API Development
+
+```bash
+# Pretty-print API response
+curl -s https://api.example.com/data | sttr json -i
+
+# Validate JSON payload
+cat request.json | sttr json && echo "Valid JSON"
+
+# Minify JSON for production
+cat large.json | sttr json > minified.json
+```
+
+### Data Processing Pipeline
+
+```bash
+# YAML → JSON → Process → YAML
+cat input.yaml | \
+  sttr yaml-json | \
+  jq '.data[] | select(.active == true)' | \
+  sttr json -i
+
+# Format all JSON files
+find . -name '*.json' -exec sh -c \
+  'cat "$1" | sttr json -i > "$1.tmp" && mv "$1.tmp" "$1"' _ {} \;
+```
+
+### Logging and Debugging
+
+```bash
+# Extract and format JSON from logs
+grep 'API_RESPONSE' app.log | \
+  cut -d' ' -f5- | \
+  sttr json-unescape -i
+
+# Validate JSON in log files
+grep '{' app.log | sttr json 2>/dev/null
+```
+
+### Configuration Conversion
+
+```bash
+# Convert entire directory of configs
+for file in configs/*.json; do
+  cat "$file" | sttr json-yaml > "${file%.json}.yaml"
+done
+
+# Reverse: YAML to JSON
+for file in configs/*.yaml; do
+  cat "$file" | sttr yaml-json -i > "${file%.yaml}.json"
+done
+```
+
+### Data Compression
+
+```bash
+# Compare sizes: JSON vs MSGPACK
+JSON_SIZE=$(cat data.json | wc -c)
+MSGPACK_SIZE=$(cat data.json | sttr json-msgpack | wc -c)
+echo "JSON: $JSON_SIZE bytes"
+echo "MSGPACK: $MSGPACK_SIZE bytes"
+echo "Savings: $(( (JSON_SIZE - MSGPACK_SIZE) * 100 / JSON_SIZE ))%"
+```
+
+---
+
+## Format Comparison
+
+### JSON
+- **Pros:** Universal, human-readable, well-supported
+- **Cons:** Verbose, larger file size
+- **Use when:** Interoperability, debugging, configuration
+
+### YAML
+- **Pros:** Very readable, supports comments, less verbose
+- **Cons:** Whitespace-sensitive, slower parsing
+- **Use when:** Configuration files, Kubernetes, Docker Compose
+
+### MessagePack
+- **Pros:** Compact, fast serialization, binary format
+- **Cons:** Not human-readable, less widespread support
+- **Use when:** Network transmission, caching, performance-critical
+
+---
+
+## Common Workflows
+
+### Development to Production
+
+```bash
+# Development: Use YAML for readability
+cat config.dev.yaml | sttr yaml-json -i > config.json
+
+# Production: Minify JSON
+cat config.json | sttr json > config.min.json
+```
+
+### CI/CD Pipeline
+
+```bash
+# Validate all JSON in repo
+find . -name '*.json' | while read f; do
+  cat "$f" | sttr json > /dev/null || echo "Invalid: $f"
+done
+
+# Convert Kubernetes YAML to JSON for processing
+cat deployment.yaml | sttr yaml-json | jq '.spec.replicas = 3'
+```
+
+### Data Migration
+
+```bash
+# Export from YAML, process, import as JSON
+cat old-format.yaml | \
+  sttr yaml-json | \
+  jq '.version = "2.0"' | \
+  sttr json -i > new-format.json
+```

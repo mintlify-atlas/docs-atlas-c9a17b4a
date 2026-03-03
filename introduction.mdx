@@ -1,0 +1,161 @@
+---
+title: Introduction
+description: sttr is a cross-platform CLI tool that lets you quickly run various transformation operations on strings
+---
+
+# sttr
+
+`sttr` is command line software that allows you to quickly run various transformation operations on strings. Whether you need to encode/decode, hash, format, or transform text, sttr provides an intuitive interface with 80+ operations.
+
+## Why sttr?
+
+<CardGroup cols={2}>
+  <Card title="Interactive Mode" icon="terminal">
+    Launch an interactive menu to explore and apply transformations with ease
+  </Card>
+  <Card title="Direct Input" icon="bolt">
+    Pass text directly as arguments for quick one-off transformations
+  </Card>
+  <Card title="Pipe Compatible" icon="link">
+    Chain transformations together using Unix pipes
+  </Card>
+  <Card title="80+ Operations" icon="wand-magic-sparkles">
+    Encoding, hashing, string formatting, JSON/YAML conversion, and more
+  </Card>
+</CardGroup>
+
+## Quick Example
+
+See sttr in action:
+
+<CodeGroup>
+```bash Interactive Mode
+# Launch interactive menu
+sttr
+# Provide your input
+# Press two enter to open operation menu
+# Press / to filter operations
+```
+
+```bash Direct Input
+# Encode text to base64
+sttr base64-encode "Hello World"
+# SGVsbG8gV29ybGQ=
+
+# Get MD5 hash
+sttr md5 "Hello World"
+# b10a8db164e0754105b7a99be72e3fe5
+```
+
+```bash Piping
+# Chain transformations
+echo "Hello World" | sttr base64-encode | sttr md5
+
+# From other commands
+curl https://api.example.com/users | sttr json-yaml
+```
+
+```bash File Operations
+# Process files
+sttr base64-encode image.jpg
+sttr md5 file.txt
+sttr yaml-json config.yaml > config.json
+```
+</CodeGroup>
+
+## Key Features
+
+### 1. Encoding & Decoding
+Support for Base64, Base32, Base85, Ascii85, URL encoding, HTML entities, ROT13, Morse code, and hexadecimal encoding.
+
+### 2. Cryptographic Hashing
+Generate MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, bcrypt, XXH32, XXH64, XXH128, BLAKE2b, BLAKE2s, CRC32, and Adler32 checksums.
+
+### 3. String Transformations
+Convert between camelCase, PascalCase, snake_case, kebab-case, slug-case, and more. Includes reverse, case conversion, and text manipulation.
+
+### 4. Format Conversion
+Convert between JSON and YAML, JSON and MSGPACK, Markdown to HTML, and hex color codes to RGB.
+
+### 5. Text Utilities
+Extract emails, URLs, and IP addresses. Count characters, words, and lines. Sort, shuffle, reverse, and deduplicate lines.
+
+## Get Started
+
+<CardGroup cols={3}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install sttr on your platform
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get up and running in minutes
+  </Card>
+  <Card title="CLI Reference" icon="book" href="https://abhimanyu003.github.io/sttr/cli/sttr/">
+    Browse all available commands
+  </Card>
+</CardGroup>
+
+## Example Use Cases
+
+<Accordion title="Encode sensitive data">
+```bash
+# Encode API credentials
+echo "my-api-key" | sttr base64-encode
+
+# Decode when needed
+echo "bXktYXBpLWtleQ==" | sttr base64-decode
+```
+</Accordion>
+
+<Accordion title="Convert configuration files">
+```bash
+# YAML to JSON
+sttr yaml-json config.yaml > config.json
+
+# JSON to YAML
+sttr json-yaml package.json > package.yaml
+```
+</Accordion>
+
+<Accordion title="Generate file checksums">
+```bash
+# Verify file integrity
+sttr sha256 document.pdf
+sttr md5 image.jpg
+```
+</Accordion>
+
+<Accordion title="Format code identifiers">
+```bash
+# Convert naming conventions
+echo "user profile name" | sttr camel    # userProfileName
+echo "user profile name" | sttr pascal   # UserProfileName
+echo "user profile name" | sttr snake    # user_profile_name
+echo "user profile name" | sttr kebab    # user-profile-name
+```
+</Accordion>
+
+<Accordion title="Extract data from text">
+```bash
+# Extract all emails from a file
+sttr extract-emails contacts.txt
+
+# Extract URLs from HTML
+curl https://example.com | sttr extract-urls
+
+# Extract IP addresses from logs
+cat server.log | sttr extract-ip
+```
+</Accordion>
+
+## Cross-Platform Support
+
+sttr works seamlessly across:
+- **macOS** (Intel & Apple Silicon)
+- **Linux** (amd64, arm64, i386)
+- **Windows** (amd64, arm64, i386)
+- **FreeBSD** (amd64, arm64, i386)
+- **Docker** containers
+
+<Note>
+sttr is built with Go and uses a streaming architecture for efficient processing of large files.
+</Note>

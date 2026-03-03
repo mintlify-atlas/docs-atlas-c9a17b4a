@@ -1,0 +1,606 @@
+---
+title: Chaining Operations
+description: Combine multiple sttr transformations for complex data processing
+icon: 'link'
+---
+
+## Overview
+
+Chaining allows you to combine multiple sttr operations in sequence by piping the output of one transformation into another. This creates powerful data processing pipelines.
+
+```bash
+sttr processor1 input | sttr processor2 | sttr processor3
+```
+
+<Note>
+Chaining leverages Unix pipes to create composable workflows where each sttr command performs one transformation.
+</Note>
+
+## Basic Chaining
+
+<CodeGroup>
+```bash Encode then Hash
+echo "Hello World" | sttr base64-encode | sttr md5
+# U0dWc2JHOGdWMjl5YkdRPQ==
+```
+
+```bash Hash then Encode
+echo "password123" | sttr sha256 | sttr base64-encode
+# ZWYzNWI2MTJkNjg4NTc4MTFlYzYwNWY3YWEzZTNjZDhmMjIzMThmYzFjYTgxOGZiZWU1NmEwN2Q3NWE0YzU4Nw==
+```
+
+```bash Transform then Hash
+echo "Hello World" | sttr upper | sttr md5
+# b10a8db164e0754105b7a99be72e3fe5
+```
+
+```bash Multiple Case Conversions
+echo "hello world" | sttr snake | sttr upper
+# HELLO_WORLD
+```
+</CodeGroup>
+
+## How Chaining Works
+
+Each sttr command in a chain:
+
+1. Reads from stdin (the previous command's output)
+2. Applies its transformation
+3. Writes to stdout (for the next command)
+
+This is the same mechanism used in [piping](/usage/piping), but applied multiple times:
+
+```bash
+# Single transformation
+echo "data" | sttr md5
+
+# Chained transformations
+echo "data" | sttr upper | sttr md5 | sttr base64-encode
+#              ↓ STDOUT    ↓ STDIN   ↓ STDOUT   ↓ STDIN
+#              "DATA"      "8d777f385d3dfec8815d20f7496026dc"   "..."
+```
+
+Each processor receives the complete output from the previous step as input.
+
+## Common Chaining Patterns
+
+<Tabs>
+  <Tab title="Hash Chains">
+    Create multi-layer hashes for enhanced security:
+    
+    ```bash
+    # Double hash
+    echo "password" | sttr sha256 | sttr sha256
+    
+    # Hash with salt
+    echo "password:$(date +%s)" | sttr sha256
+    
+    # Multiple hash algorithms
+    echo "data" | sttr md5 | sttr sha256 | sttr sha512
+    
+    # Hash + encode for storage
+    echo "secret" | sttr sha256 | sttr base64-encode
+    
+    # Bcrypt then encode
+    echo "password" | sttr bcrypt | sttr base64-encode
+    ```
+  </Tab>
+
+  <Tab title="Encoding Chains">
+    Combine encoding transformations:
+    
+    ```bash
+    # Base64 → URL encode
+    echo "data" | sttr base64-encode | sttr url-encode
+    
+    # Hex → Base64
+    echo "Hello" | sttr hex-encode | sttr base64-encode
+    
+    # Multiple encoding layers
+    echo "secret" | sttr base64-encode | sttr base32-encode | sttr hex-encode
+    
+    # Decode chain (reverse order)
+    echo "encoded-data" | sttr hex-decode | sttr base32-decode | sttr base64-decode
+    
+    # ROT13 → Base64
+    echo "Hidden message" | sttr rot13-encode | sttr base64-encode
+    ```
+  </Tab>
+
+  <Tab title="Text Processing">
+    Combine text transformations:
+    
+    ```bash
+    # Format → Case
+    echo "hello world example" | sttr snake | sttr upper
+    # HELLO_WORLD_EXAMPLE
+    
+    # Multiple formatting steps
+    echo "  messy   spacing  " | sttr remove-spaces | sttr lower
+    
+    # Extract → Count
+    cat document.txt | sttr extract-emails | sttr unique-lines | sttr count-lines
+    
+    # Sort → Number
+    cat list.txt | sttr sort-lines | sttr number-lines
+    
+    # Clean → Format
+    echo "Hello World!" | sttr slug | sttr upper
+    # hello-world → HELLO-WORLD
+    ```
+  </Tab>
+
+  <Tab title="Data Conversion">
+    Chain format conversions:
+    
+    ```bash
+    # YAML → JSON → Minified
+    cat config.yaml | sttr yaml-json | sttr json
+    
+    # JSON → YAML → Format
+    cat data.json | sttr json-yaml | sttr markdown-html
+    
+    # JSON escape → Encode
+    cat payload.json | sttr json-escape | sttr base64-encode
+    
+    # Decode → Format → Convert
+    cat encoded.txt | sttr base64-decode | sttr json -i | sttr json-yaml
+    
+    # Extract → Convert
+    cat mixed.txt | sttr extract-urls | sttr url-encode
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Chaining Examples
+
+<CodeGroup>
+```bash Token Generation
+#!/bin/bash
+# Generate secure API token
+USER="john.doe@example.com"
+TIMESTAMP=$(date +%s)
+SECRET="api-secret-key-2024"
+
+TOKEN=$(echo "${USER}:${TIMESTAMP}:${SECRET}" | \
+  sttr sha256 | \
+  sttr base64-encode | \
+  sttr url-encode)
+
+echo "Token: $TOKEN"
+echo "Expires: $(date -d @$((TIMESTAMP + 3600)))"  # 1 hour from now
+```
+
+```bash Data Obfuscation
+#!/bin/bash
+# Multi-layer encoding
+SECRET="Confidential Information"
+
+ENCODED=$(echo "$SECRET" | \
+  sttr rot13-encode | \
+  sttr base64-encode | \
+  sttr hex-encode | \
+  sttr base32-encode)
+
+echo "Encoded: $ENCODED"
+
+# Decode (reverse order!)
+DECODED=$(echo "$ENCODED" | \
+  sttr base32-decode | \
+  sttr hex-decode | \
+  sttr base64-decode | \
+  sttr rot13-encode)  # ROT13 is its own inverse
+
+echo "Decoded: $DECODED"
+```
+
+```bash Log Processing Pipeline
+#!/bin/bash
+# Extract, clean, and analyze log data
+cat /var/log/app.log | \
+  sttr extract-ip | \
+  sttr unique-lines | \
+  sttr sort-lines | \
+  sttr number-lines > unique-ips.txt
+
+IP_COUNT=$(cat unique-ips.txt | sttr count-lines)
+echo "Found $IP_COUNT unique IP addresses"
+
+# Hash each IP for privacy
+cat unique-ips.txt | while read line; do
+  echo "$line" | sttr sha256
+done > hashed-ips.txt
+```
+
+```bash Config Transformation
+#!/bin/bash
+# Transform config through multiple formats
+# Start: YAML → JSON → Escaped → Encoded → Store
+
+cat config.yaml | \
+  sttr yaml-json -i | \
+  sttr json-escape | \
+  sttr base64-encode > config.encoded
+
+echo "Config encoded and stored"
+
+# Retrieve: Decode → Unescape → Format → Convert back
+cat config.encoded | \
+  sttr base64-decode | \
+  sttr json-unescape -i | \
+  sttr json-yaml > config-restored.yaml
+
+echo "Config decoded and restored"
+```
+</CodeGroup>
+
+## Chaining with File Processing
+
+```bash
+# Process file through multiple transformations
+sttr md5 file.txt | sttr base64-encode > file.txt.hash.b64
+
+# Chain file operations
+sttr yaml-json config.yaml | sttr json -i | sttr json-escape > escaped-config.txt
+
+# Multi-file chain
+for file in *.json; do
+  sttr json "$file" | sttr json-yaml > "${file%.json}.yaml"
+  echo "Converted: $file"
+done
+
+# Process and verify
+HASH_BEFORE=$(sttr sha256 original.txt)
+sttr upper original.txt | sttr lower > restored.txt
+HASH_AFTER=$(sttr sha256 restored.txt)
+
+if [ "$HASH_BEFORE" = "$HASH_AFTER" ]; then
+  echo "Transformation is reversible"
+fi
+```
+
+## Chaining with Conditional Logic
+
+<CodeGroup>
+```bash Validation Chain
+#!/bin/bash
+set -o pipefail
+
+# Validate each step
+if echo "$data" | sttr json > /dev/null 2>&1; then
+  echo "$data" | sttr json -i | sttr json-yaml > output.yaml
+  echo "Success"
+else
+  echo "Invalid JSON input"
+  exit 1
+fi
+```
+
+```bash Try Multiple Processors
+#!/bin/bash
+# Try different processing chains
+INPUT="sample data"
+
+if RESULT=$(echo "$INPUT" | sttr base64-encode | sttr md5 2>/dev/null); then
+  echo "Method 1: $RESULT"
+elif RESULT=$(echo "$INPUT" | sttr sha256 | sttr base64-encode 2>/dev/null); then
+  echo "Method 2: $RESULT"
+else
+  echo "All methods failed"
+fi
+```
+
+```bash Conditional Processing
+#!/bin/bash
+# Choose chain based on input
+FORMAT=$(file --mime-type -b "$1")
+
+case "$FORMAT" in
+  "application/json")
+    sttr json "$1" | sttr json-yaml
+    ;;
+  "text/plain")
+    sttr md5 "$1" | sttr base64-encode
+    ;;
+  *)
+    echo "Unsupported format: $FORMAT"
+    ;;
+esac
+```
+</CodeGroup>
+
+## Reversible Chains
+
+Some operations can be chained in reverse order to reconstruct original data:
+
+```bash
+# Encode chain
+ORIGINAL="Hello World"
+ENCODED=$(echo "$ORIGINAL" | sttr base64-encode | sttr hex-encode)
+echo "Encoded: $ENCODED"
+
+# Decode chain (reverse order!)
+DECODED=$(echo "$ENCODED" | sttr hex-decode | sttr base64-decode)
+echo "Decoded: $DECODED"
+echo "Match: $([ "$ORIGINAL" = "$DECODED" ] && echo 'YES' || echo 'NO')"
+
+# Multi-layer reversible
+echo "data" | sttr base64-encode | sttr url-encode | sttr base32-encode > encoded.txt
+cat encoded.txt | sttr base32-decode | sttr url-decode | sttr base64-decode
+# Output: data
+```
+
+<Warning>
+**Order matters!** When decoding, reverse the order of encoding operations:
+
+```bash
+# Encoding: A → B → C
+echo "data" | sttr base64-encode | sttr hex-encode | sttr url-encode
+
+# Decoding: C → B → A (reverse!)
+echo "encoded" | sttr url-decode | sttr hex-decode | sttr base64-decode
+```
+</Warning>
+
+## Using Intermediate Variables
+
+Store intermediate results for debugging or branching:
+
+```bash
+# Store intermediate steps
+STEP1=$(echo "data" | sttr md5)
+STEP2=$(echo "$STEP1" | sttr base64-encode)
+STEP3=$(echo "$STEP2" | sttr upper)
+
+echo "Step 1 (MD5): $STEP1"
+echo "Step 2 (Base64): $STEP2"
+echo "Step 3 (Upper): $STEP3"
+
+# Branch from intermediate result
+BRANCH_A=$(echo "$STEP2" | sttr sha256)
+BRANCH_B=$(echo "$STEP2" | sttr sha512)
+
+echo "Branch A (SHA256): $BRANCH_A"
+echo "Branch B (SHA512): $BRANCH_B"
+```
+
+## Parallel Chains
+
+Process data through multiple chains simultaneously:
+
+```bash
+# Process same input through different chains
+DATA="sample text"
+
+# Chain 1: Hash with MD5
+HASH_MD5=$(echo "$DATA" | sttr md5 | sttr base64-encode)
+
+# Chain 2: Hash with SHA256
+HASH_SHA256=$(echo "$DATA" | sttr sha256 | sttr base64-encode)
+
+# Chain 3: Encode only
+ENCODED=$(echo "$DATA" | sttr base64-encode | sttr url-encode)
+
+echo "MD5 chain: $HASH_MD5"
+echo "SHA256 chain: $HASH_SHA256"
+echo "Encode chain: $ENCODED"
+
+# Using process substitution
+paste <(echo "$DATA" | sttr md5) \
+      <(echo "$DATA" | sttr sha256) \
+      <(echo "$DATA" | sttr sha512)
+```
+
+## Chaining with Flags
+
+Pass flags to specific processors in the chain:
+
+```bash
+# JSON formatting with indent
+echo '{"a":1,"b":2}' | sttr json -i | sttr json-yaml
+
+# YAML to formatted JSON
+sttr yaml-json -i config.yaml | sttr json-escape
+
+# Zero-pad then encode
+echo "42" | sttr zeropad -n 10 -p "ID-" | sttr base64-encode
+# Output: SWQtMDAwMDAwMDA0Mg==
+
+# CRC32 with custom polynomial then encode
+echo "data" | sttr crc32 -p castagnoli | sttr hex-encode
+```
+
+## Performance Optimization
+
+<Tip>
+**Minimize chain length**: Each pipe adds overhead. Consider if operations can be combined:
+
+```bash
+# Less efficient (3 processes)
+echo "data" | sttr upper | sttr snake | sttr md5
+
+# More efficient (process once, then hash)
+echo "data" | sttr snake | sttr md5
+```
+</Tip>
+
+<Tip>
+**Use streaming processors**: Prefer processors that support streaming for large data:
+
+```bash
+# Good: streaming processors
+cat large.txt | sttr sha256 | sttr base64-encode
+
+# Avoid: buffered processors in long chains
+cat large.txt | sttr json -i | sttr json-yaml  # May use lots of memory
+```
+</Tip>
+
+<Tip>
+**Parallel processing with GNU Parallel**:
+
+```bash
+# Process multiple chains in parallel
+cat urls.txt | parallel "curl -s {} | sttr json -i | sttr json-yaml"
+
+# Chain with parallel execution
+cat files.txt | parallel "sttr md5 {} | sttr base64-encode"
+```
+</Tip>
+
+## Error Handling in Chains
+
+```bash
+#!/bin/bash
+set -o pipefail  # Fail if any command in pipe fails
+set -e           # Exit on error
+
+# Chain with error checking
+if echo "$INPUT" | sttr base64-encode | sttr md5 > output.txt 2>&1; then
+  echo "Chain completed successfully"
+else
+  echo "Chain failed at some point"
+  exit 1
+fi
+
+# Check each step
+STEP1=$(echo "$INPUT" | sttr base64-encode) || {
+  echo "Base64 encoding failed"
+  exit 1
+}
+
+STEP2=$(echo "$STEP1" | sttr md5) || {
+  echo "MD5 hashing failed"
+  exit 1
+}
+
+echo "Final result: $STEP2"
+```
+
+## Real-World Chaining Scenarios
+
+<CodeGroup>
+```bash API Authentication
+#!/bin/bash
+# Generate signed API request
+METHOD="GET"
+PATH="/api/users"
+TIMESTAMP=$(date +%s)
+SECRET="api-secret-key"
+
+# Create signature: method:path:timestamp → SHA256 → Base64
+SIGNATURE=$(echo "${METHOD}:${PATH}:${TIMESTAMP}" | \
+  sttr sha256 | \
+  sttr base64-encode)
+
+curl -H "X-Signature: $SIGNATURE" \
+     -H "X-Timestamp: $TIMESTAMP" \
+     "https://api.example.com${PATH}"
+```
+
+```bash Data Anonymization
+#!/bin/bash
+# Anonymize sensitive data in logs
+cat user-actions.log | \
+  sttr extract-emails | \
+  while read email; do
+    HASH=$(echo "$email" | sttr sha256 | cut -c1-16)
+    sed -i "s/$email/user-$HASH/g" user-actions.log
+  done
+
+echo "Emails anonymized"
+```
+
+```bash Backup with Verification
+#!/bin/bash
+# Create backup with multi-hash verification
+BACKUP_FILE="backup-$(date +%Y%m%d).tar.gz"
+
+# Create backup and generate hashes
+tar czf - /data | tee "$BACKUP_FILE" | \
+  sttr sha256 | \
+  sttr base64-encode > "${BACKUP_FILE}.hash"
+
+echo "Backup created: $BACKUP_FILE"
+
+# Verification chain
+VERIFY=$(cat "$BACKUP_FILE" | sttr sha256 | sttr base64-encode)
+EXPECTED=$(cat "${BACKUP_FILE}.hash")
+
+if [ "$VERIFY" = "$EXPECTED" ]; then
+  echo "Backup verified successfully"
+else
+  echo "Backup verification FAILED!"
+  exit 1
+fi
+```
+
+```bash Configuration Migration
+#!/bin/bash
+# Migrate config: YAML → JSON → Escaped → Template
+TEMPLATE_NAME="$1"
+CONFIG_FILE="$2"
+
+# Process config through chain
+PROCESSED=$(cat "$CONFIG_FILE" | \
+  sttr yaml-json -i | \
+  sttr json-escape)
+
+# Inject into template
+cat template.tpl | \
+  sed "s/{{CONFIG}}/$PROCESSED/g" > "output/${TEMPLATE_NAME}.txt"
+
+echo "Configuration migrated to template"
+```
+</CodeGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Keep chains logical and readable">
+    Use intermediate variables for complex chains:
+    ```bash
+    ENCODED=$(echo "$data" | sttr base64-encode)
+    HASHED=$(echo "$ENCODED" | sttr sha256)
+    echo "$HASHED"
+    ```
+  </Step>
+
+  <Step title="Remember decode order">
+    Reverse the encoding chain when decoding:
+    ```bash
+    # Encode: A → B → C
+    # Decode: C → B → A
+    ```
+  </Step>
+
+  <Step title="Use set -o pipefail">
+    Catch errors in any part of the chain:
+    ```bash
+    set -o pipefail
+    ```
+  </Step>
+
+  <Step title="Document complex chains">
+    ```bash
+    # Generate token: data → SHA256 → Base64 → URL-encode
+    TOKEN=$(echo "$data" | sttr sha256 | sttr base64-encode | sttr url-encode)
+    ```
+  </Step>
+</Steps>
+
+## When to Use Chaining
+
+**Best for:**
+- Multi-step transformations
+- Token/signature generation
+- Data encoding pipelines
+- Complex text processing
+- Format conversion workflows
+- Creating reversible operations
+
+**Not ideal for:**
+- Simple single transformations (use [direct input](/usage/direct-input))
+- When intermediate results are needed (store variables)
+- Very long chains (split into steps for debugging)
+- Operations that need different input sources

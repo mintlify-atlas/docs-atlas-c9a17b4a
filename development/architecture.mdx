@@ -1,0 +1,338 @@
+---
+title: Architecture
+description: Understanding the sttr codebase structure and internal workings
+---
+
+This guide explains how sttr is architected internally, including the processor system, command generation, and UI components.
+
+## Directory Structure
+
+The sttr codebase is organized into several key directories:
+
+```
+sttr/
+├── cmd/              # CLI commands and generated processor commands
+├── processors/       # Core processor implementations
+├── ui/              # Terminal UI (TUI) implementation
+├── utils/           # Utility functions
+└── main.go          # Entry point with go:generate directive
+```
+
+### Key Components
+
+- **main.go**: Entry point that calls `cmd.Execute()` and contains the `//go:generate` directive
+- **cmd/**: Contains the root command, completion, interactive mode, and all processor commands
+- **processors/**: Contains all text transformation processors and the Processor interface
+- **ui/**: Implements the interactive TUI using Bubble Tea
+- **utils/**: Helper functions for text processing
+
+## The Processor Pattern
+
+At the heart of sttr is the **Processor** interface, which defines how all text transformations work.
+
+### Processor Interface
+
+Every processor must implement this interface (from `processors/processor.go:89-103`):
+
+```go
+type Processor interface {
+    // Name is the name of a processor used as the CLI command, must be one lowercase word,
+    // hyphens are allowed
+    Name() string
+
+    // Alias is an optional array of alias names for the processor
+    Alias() []string
+
+    // Transform is the text transformation function, implemented by the processor
+    Transform(data []byte, opts ...Flag) (string, error)
+
+    // Flags are flags that could be used to transform the text
+    Flags() []Flag
+}
+```
+
+### UI Integration Methods
+
+Processors also implement additional methods for the interactive TUI (from the `bubbles/list` package):
+
+```go
+// Title returns the display title in the UI
+Title() string
+
+// Description returns a short description
+Description() string
+
+// FilterValue returns the searchable text for filtering
+FilterValue() string
+```
+
+### The Processor List
+
+All processors are registered in a central list (`processors/processor.go:15-87`):
+
+```go
+var List = []list.Item{
+    Adler32{},
+    ASCII85Decoding{},
+    ASCII85Encoding{},
+    Base32Decode{},
+    // ... all processors
+    Zeropad{},
+}
+```
+
+This list is used by:
+1. **The code generator** to create individual CLI commands
+2. **The interactive UI** to display available transformations
+
+## Command Generation System
+
+sttr uses Go's code generation to automatically create CLI commands from processors.
+
+### The go:generate Directive
+
+In `main.go:11`, there's a special comment:
+
+```go
+//go:generate go run cmd/generate.go
+```
+
+When you run `go generate`, this executes `cmd/generate.go`, which:
+
+1. Reads all processors from `processors.List`
+2. For each processor, generates a complete cobra command file
+3. Saves it as `cmd/processor_{name}.go`
+
+### What Gets Generated
+
+For each processor, the generator creates (`cmd/generate.go`):
+
+- **Command file**: `cmd/processor_{name}.go`
+- **Cobra command** with the processor's name
+- **Flag parsing** for any processor-specific flags
+- **Input handling** for stdin, files, and direct string input
+- **Streaming support** for large files
+
+Example generated command (from `cmd/processor_zeropad.go`):
+
+```go
+var zeropadCmd = &cobra.Command{
+    Use:     "zeropad [string]",
+    Short:   "Pad a number with zeros",
+    Aliases: []string{},
+    Args:    cobra.MaximumNArgs(1),
+    RunE: func(cmd *cobra.Command, args []string) error {
+        // Flag handling, input processing, transformation
+    },
+}
+```
+
+### Running Code Generation
+
+To regenerate all commands after adding/modifying a processor:
+
+```bash
+go generate
+```
+
+This is automatically done during the build process.
+
+## Flag System
+
+Processors can define custom flags to control their behavior.
+
+### Flag Structure
+
+From `processors/processor.go:140-154`:
+
+```go
+type Flag struct {
+    // Name - required (long version) of the flag, lowercase (with hyphens)
+    Name string
+
+    // Short - required (single character, lowercase) of the flag
+    Short string
+
+    // Desc - required, a short description of the flag
+    Desc string
+    
+    // Type - required the type of the flag
+    Type FlagType
+
+    // Value - optional default value of the flag
+    Value any
+}
+```
+
+### Flag Types
+
+```go
+const (
+    FlagInt    = FlagType("Int")
+    FlagUint   = FlagType("Uint")
+    FlagBool   = FlagType("Bool")
+    FlagString = FlagType("String")
+)
+```
+
+### Example: Zeropad Flags
+
+From `processors/processor.go:342-359`:
+
+```go
+func (p Zeropad) Flags() []Flag {
+    return []Flag{
+        {
+            Name:  "number-of-zeros",
+            Short: "n",
+            Desc:  "Number of zeros to be padded",
+            Value: 5,
+            Type:  FlagUint,
+        },
+        {
+            Name:  "prefix",
+            Short: "p",
+            Desc:  "The number get prefixed with this",
+            Value: "",
+            Type:  FlagString,
+        },
+    }
+}
+```
+
+These flags are automatically converted to cobra flags in the generated command.
+
+## UI/TUI System
+
+The interactive mode uses [Bubble Tea](https://github.com/charmbracelet/bubbletea) for the terminal UI.
+
+### How It Works
+
+1. **User runs `sttr` without arguments** (`cmd/root.go:19-24`):
+   ```go
+   RunE: func(cmd *cobra.Command, args []string) error {
+       if len(args) == 0 {
+           x := ui.New("")
+           x.Render()
+       }
+       return nil
+   }
+   ```
+
+2. **UI prompts for input** (`ui/ui.go:43-56`):
+   - Shows a styled prompt: "Provide string to transform"
+   - Reads multiline input (2 empty lines to submit)
+
+3. **UI displays processor list** (`ui/ui.go:59-64`):
+   - Creates a list from `processors.List`
+   - Users can search/filter with `/`
+   - Select with Enter
+
+4. **Transform and display result** (`ui/ui.go:66-80`):
+   - Calls the selected processor's `Transform()` method
+   - Displays the result with styled borders
+
+### UI Components
+
+The UI module (`ui/ui.go`) uses:
+- **Bubble Tea** for the TUI framework
+- **Bubbles List** for the processor selection menu
+- **Lipgloss** for styling and colors
+
+## Input Handling
+
+sttr supports multiple input methods, handled by the generated commands:
+
+### 1. Interactive Mode
+```bash
+sttr
+# Prompts for input, then shows processor menu
+```
+
+### 2. Direct String Input
+```bash
+sttr md5 "Hello World"
+```
+
+### 3. Pipe Input
+```bash
+echo "Hello World" | sttr md5
+```
+
+### 4. File Input
+```bash
+sttr base64-encode image.jpg
+```
+
+For files over 10MB, sttr automatically uses streaming to process data efficiently.
+
+## Streaming Architecture
+
+For large files, sttr uses a streaming system (`processors/processor.go:163-240`).
+
+### Streaming Configuration
+
+```go
+type StreamingConfig struct {
+    // ChunkSize defines the size of chunks to read from input (default: 64KB)
+    ChunkSize int
+    
+    // BufferOutput whether to buffer output before writing
+    BufferOutput bool
+    
+    // LineByLine whether to process input line by line
+    LineByLine bool
+}
+```
+
+### Streaming Modes
+
+1. **Line-by-line**: Process each line individually (e.g., for line operations)
+2. **Buffered**: Read all input, then process (e.g., for JSON parsing)
+3. **Chunked**: Process data in chunks (e.g., for hashing)
+
+Processors can implement `ConfigurableStreamingProcessor` to customize streaming behavior.
+
+## Execution Flow
+
+### CLI Command Flow
+
+1. User runs `sttr {processor-name} {input}`
+2. Cobra routes to the generated command for that processor
+3. Command parses flags and determines input source (string/file/stdin)
+4. For files, checks if streaming should be used (>10MB or processor prefers streaming)
+5. Calls processor's `Transform()` method
+6. Outputs result to stdout
+
+### Interactive Flow
+
+1. User runs `sttr` with no arguments
+2. Root command launches UI (`ui.New("").Render()`)
+3. UI prompts for input text
+4. UI displays processor list from `processors.List`
+5. User selects processor
+6. UI calls `Transform()` and displays result
+
+## Adding New Functionality
+
+To extend sttr:
+
+1. **New processor**: Create a struct implementing `Processor` interface, add to `processors.List`
+2. **New processor file**: Group related processors in a new file under `processors/`
+3. **New UI component**: Modify `ui/ui.go` to add UI features
+4. **New utility**: Add helper functions to `utils/`
+
+After adding a processor, run `go generate` to create its CLI command.
+
+## Dependencies
+
+Key external dependencies:
+
+- **cobra**: CLI framework
+- **bubbletea**: Terminal UI framework
+- **bubbles**: TUI components (lists, etc.)
+- **lipgloss**: Terminal styling
+- **strcase**: String case conversions
+- Various encoding/hashing libraries
+
+See `go.mod` for the complete list.

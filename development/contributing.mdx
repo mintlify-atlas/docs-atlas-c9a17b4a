@@ -1,0 +1,364 @@
+---
+title: Contributing
+description: Guidelines for contributing to sttr development
+---
+
+We welcome contributions to sttr! This guide will help you get started with contributing code, processors, bug fixes, and documentation.
+
+## Quick Links
+
+- **GitHub Repository**: [github.com/abhimanyu003/sttr](https://github.com/abhimanyu003/sttr)
+- **Issues**: [Report bugs or request features](https://github.com/abhimanyu003/sttr/issues)
+- **Pull Requests**: [Submit your contributions](https://github.com/abhimanyu003/sttr/pulls)
+- **Developer Guide**: [GitHub Wiki](https://github.com/abhimanyu003/sttr/wiki/Developer-Guides)
+- **Contact**: [@abhimanyu003 on Twitter](https://twitter.com/abhimanyu003)
+
+## Ways to Contribute
+
+There are many ways to contribute to sttr:
+
+- **Add new processors** - String transformations, encoders, hashes, etc.
+- **Fix bugs** - Help resolve issues from the issue tracker
+- **Improve performance** - Optimize existing processors
+- **Write tests** - Increase test coverage
+- **Improve documentation** - Fix typos, add examples, clarify guides
+- **Refactor code** - Improve code quality and maintainability
+- **Translate** - Help with internationalization
+
+## Getting Started
+
+### Prerequisites
+
+- **Go 1.18+** installed
+- **Git** for version control
+- Familiarity with Go and command-line tools
+
+### Setting Up Development Environment
+
+<Steps>
+
+<Step title="Fork and clone the repository">
+
+```bash
+# Fork the repository on GitHub, then:
+git clone https://github.com/YOUR-USERNAME/sttr.git
+cd sttr
+```
+
+</Step>
+
+<Step title="Install dependencies">
+
+```bash
+go mod download
+```
+
+</Step>
+
+<Step title="Build the project">
+
+```bash
+go build
+```
+
+</Step>
+
+<Step title="Run sttr locally">
+
+```bash
+./sttr --help
+./sttr
+```
+
+</Step>
+
+</Steps>
+
+### Development Workflow
+
+1. **Create a branch** for your feature or fix:
+   ```bash
+   git checkout -b feature/my-new-processor
+   ```
+
+2. **Make your changes** following the guidelines below
+
+3. **Run code generation** if you added/modified processors:
+   ```bash
+   go generate
+   ```
+
+4. **Run tests** to ensure everything works:
+   ```bash
+   go test ./...
+   ```
+
+5. **Commit your changes**:
+   ```bash
+   git add .
+   git commit -m "Add new processor for X transformation"
+   ```
+
+6. **Push to your fork**:
+   ```bash
+   git push origin feature/my-new-processor
+   ```
+
+7. **Open a Pull Request** on GitHub
+
+## Adding a New Processor
+
+See the detailed [Adding Processors](/development/adding-processors) guide for step-by-step instructions.
+
+Quick checklist:
+
+- [ ] Create processor struct implementing `Processor` interface
+- [ ] Add to `processors.List`
+- [ ] Run `go generate`
+- [ ] Write tests
+- [ ] Update documentation if needed
+
+## Code Style Guidelines
+
+### Go Code Standards
+
+- Follow standard Go conventions and idioms
+- Use `gofmt` to format code (automatically applied by most editors)
+- Run `go vet` to catch common mistakes
+- Use meaningful variable and function names
+- Add comments for exported functions and types
+
+### Processor Guidelines
+
+- **Name**: Lowercase with hyphens (e.g., `base64-encode`, `json-yaml`)
+- **Description**: Clear, concise description of what it does
+- **Error handling**: Return meaningful errors, don't panic
+- **Performance**: Consider streaming support for large files
+- **Edge cases**: Handle empty input, invalid data gracefully
+
+### Example Processor Pattern
+
+```go
+// ProcessorName is a brief description of what this processor does.
+// Example: "input" to "output".
+type ProcessorName struct{}
+
+func (p ProcessorName) Name() string {
+    return "processor-name"
+}
+
+func (p ProcessorName) Transform(data []byte, f ...Flag) (string, error) {
+    // 1. Validate input
+    if len(data) == 0 {
+        return "", fmt.Errorf("empty input")
+    }
+    
+    // 2. Process flags
+    // ...
+    
+    // 3. Perform transformation
+    // ...
+    
+    // 4. Return result or error
+    return result, nil
+}
+
+// ... implement other required methods
+```
+
+## Testing Requirements
+
+All new processors should include tests.
+
+### Writing Tests
+
+Create or add to a test file in the `processors/` directory:
+
+```go
+func TestProcessorName(t *testing.T) {
+    p := ProcessorName{}
+    
+    tests := []struct {
+        name     string
+        input    []byte
+        flags    []Flag
+        expected string
+        wantErr  bool
+    }{
+        {
+            name:     "basic transformation",
+            input:    []byte("input"),
+            flags:    nil,
+            expected: "output",
+            wantErr:  false,
+        },
+        {
+            name:     "empty input",
+            input:    []byte(""),
+            expected: "",
+            wantErr:  true,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result, err := p.Transform(tt.input, tt.flags...)
+            if (err != nil) != tt.wantErr {
+                t.Errorf("unexpected error status: got error %v, wantErr %v", err, tt.wantErr)
+            }
+            if result != tt.expected {
+                t.Errorf("expected %q, got %q", tt.expected, result)
+            }
+        })
+    }
+}
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Run specific package tests
+go test ./processors/
+
+# Run with verbose output
+go test -v ./...
+```
+
+### Test Coverage
+
+Aim for good test coverage of your processor:
+- Test normal cases
+- Test edge cases (empty input, very large input)
+- Test error cases (invalid input)
+- Test with different flag combinations
+
+## Code Generation
+
+After adding or modifying processors, regenerate commands:
+
+```bash
+go generate
+```
+
+This runs `cmd/generate.go` which creates individual command files for each processor.
+
+**Do not manually edit generated files** in `cmd/processor_*.go` - they are overwritten by `go generate`.
+
+## Documentation
+
+### Code Documentation
+
+- Add comments for exported types and functions
+- Use godoc format:
+  ```go
+  // ProcessorName is a processor that does X.
+  // It transforms input in the following way: ...
+  type ProcessorName struct{}
+  ```
+
+### User Documentation
+
+If your processor adds significant new functionality:
+
+1. Update the README.md with your processor in the appropriate category
+2. Consider adding usage examples
+3. Update this documentation site if needed
+
+## Submitting Pull Requests
+
+### PR Checklist
+
+Before submitting:
+
+- [ ] Code builds successfully (`go build`)
+- [ ] All tests pass (`go test ./...`)
+- [ ] Ran `go generate` if adding/modifying processors
+- [ ] Added tests for new functionality
+- [ ] Updated documentation if needed
+- [ ] Followed code style guidelines
+- [ ] Commit messages are clear and descriptive
+
+### PR Description Template
+
+```markdown
+## Description
+Brief description of what this PR does.
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New processor
+- [ ] Enhancement to existing processor
+- [ ] Documentation update
+- [ ] Refactoring
+- [ ] Other (please describe)
+
+## Testing
+Describe how you tested this change.
+
+## Related Issues
+Fixes #123
+```
+
+### Review Process
+
+1. Maintainers will review your PR
+2. They may request changes or ask questions
+3. Make requested changes and push to your branch
+4. Once approved, your PR will be merged
+
+## Bug Reports
+
+When reporting bugs, include:
+
+- **sttr version**: Run `sttr version`
+- **OS and version**: e.g., macOS 13.0, Ubuntu 22.04
+- **Go version**: Run `go version`
+- **Steps to reproduce**: Exact commands and inputs
+- **Expected behavior**: What should happen
+- **Actual behavior**: What actually happens
+- **Error messages**: Complete error output
+
+## Feature Requests
+
+For feature requests:
+
+- Describe the feature and its use case
+- Explain why it would be useful
+- Provide examples of how it would be used
+- Consider if it fits sttr's scope (string/text transformations)
+
+## Community Guidelines
+
+- Be respectful and constructive
+- Help others in issues and discussions
+- Follow the code of conduct
+- Credit others for their work
+- Have fun and learn!
+
+## Questions?
+
+If you need help:
+
+- Check the [Developer Guides](https://github.com/abhimanyu003/sttr/wiki/Developer-Guides) wiki
+- Open a [GitHub Discussion](https://github.com/abhimanyu003/sttr/discussions)
+- Reach out on [Twitter](https://twitter.com/abhimanyu003)
+
+## License
+
+By contributing to sttr, you agree that your contributions will be licensed under the [MIT License](https://github.com/abhimanyu003/sttr/blob/main/LICENSE).
+
+## Recognition
+
+All contributors are recognized in the project:
+
+- Contributors graph on GitHub
+- README.md contributors section
+- Release notes
+
+Thank you for contributing to sttr!

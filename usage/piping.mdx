@@ -1,0 +1,544 @@
+---
+title: Piping
+description: Integrate sttr into command pipelines with stdin and stdout
+icon: 'pipe'
+---
+
+## Overview
+
+Piping allows you to integrate sttr seamlessly into Unix command pipelines by reading from stdin and writing to stdout. This is essential for command composition and data processing workflows.
+
+```bash
+command | sttr <processor> | another-command
+```
+
+## Basic Piping
+
+<CodeGroup>
+```bash Pipe from echo
+echo "Hello World" | sttr md5
+# b10a8db164e0754105b7a99be72e3fe5
+```
+
+```bash Pipe from cat
+cat file.txt | sttr sha256
+```
+
+```bash Pipe from curl
+curl -s https://api.example.com/data.json | sttr json -i
+```
+
+```bash Pipe to other commands
+sttr base64-encode file.txt | wc -l
+```
+</CodeGroup>
+
+## How stdin Detection Works
+
+When a processor receives no arguments, it automatically reads from stdin using `ReadMultilineInput()`. From `cmd/processor_md5.go:30-36`:
+
+```go
+if len(args) == 0 {
+    // Handle stdin/interactive input
+    in := []byte(utils.ReadMultilineInput())
+    out, err = p.Transform(in, flags...)
+    if err != nil {
+        return err
+    }
+}
+```
+
+The `ReadMultilineInput()` function (from `utils/text.go:14-33`) reads until two empty lines in interactive mode, or until EOF when piped:
+
+```go
+func ReadMultilineInput() string {
+    str := make([]string, 0)
+    scanner := bufio.NewScanner(os.Stdin)
+    empty := 0
+    for {
+        scanner.Scan()
+        text := scanner.Text()
+        str = append(str, text)
+        if len(text) != 0 {
+            empty = 0
+        } else {
+            empty++
+            if empty == 2 {
+                break
+            }
+        }
+    }
+    return strings.Join(str[:len(str)-2], "\n")
+}
+```
+
+<Note>
+When piping, stdin reaches EOF naturally, so you don't need to enter two empty lines.
+</Note>
+
+## Common Piping Patterns
+
+<Tabs>
+  <Tab title="Working with APIs">
+    Process API responses directly:
+    
+    ```bash
+    # Fetch and format JSON
+    curl -s https://api.github.com/users/abhimanyu003 | sttr json -i
+    
+    # Convert API response to YAML
+    curl -s https://jsonplaceholder.typicode.com/users | sttr json-yaml
+    
+    # Extract specific data
+    curl -s https://api.ipify.org?format=json | sttr json -i | grep ip
+    
+    # Hash API response
+    curl -s https://example.com/data | sttr sha256
+    
+    # POST with encoded data
+    echo '{"user":"admin","pass":"secret"}' | \
+      sttr base64-encode | \
+      curl -X POST -d @- https://api.example.com/auth
+    ```
+  </Tab>
+
+  <Tab title="Log Processing">
+    Analyze and transform log files:
+    
+    ```bash
+    # Extract URLs from logs
+    cat access.log | sttr extract-urls
+    
+    # Extract email addresses
+    cat messages.log | sttr extract-emails
+    
+    # Extract IP addresses
+    tail -f /var/log/nginx/access.log | sttr extract-ip
+    
+    # Count unique lines
+    cat app.log | sttr unique-lines | wc -l
+    
+    # Sort and number log entries
+    cat error.log | sttr sort-lines | sttr number-lines
+    
+    # Hash each log line for integrity
+    cat audit.log | while read line; do
+      echo "$line" | sttr sha256
+    done
+    ```
+  </Tab>
+
+  <Tab title="Data Transformation">
+    Transform data between formats:
+    
+    ```bash
+    # JSON to YAML
+    cat config.json | sttr json-yaml > config.yaml
+    
+    # YAML to JSON
+    cat docker-compose.yml | sttr yaml-json -i > config.json
+    
+    # Format JSON from clipboard
+    xclip -o | sttr json -i
+    pbpaste | sttr json -i  # macOS
+    
+    # Minify JSON
+    cat formatted.json | sttr json > minified.json
+    
+    # Convert Markdown to HTML
+    cat README.md | sttr markdown-html > README.html
+    ```
+  </Tab>
+
+  <Tab title="Text Manipulation">
+    Process text streams:
+    
+    ```bash
+    # Convert case
+    echo "hello world" | sttr upper
+    # HELLO WORLD
+    
+    # Generate variable names
+    echo "My Variable Name" | sttr snake
+    # my_variable_name
+    
+    # Create URL slugs
+    echo "Blog Post Title!" | sttr slug
+    # blog-post-title
+    
+    # Reverse text
+    echo "Hello" | sttr reverse
+    # olleH
+    
+    # Count words
+    cat essay.txt | sttr count-words
+    
+    # Remove duplicates
+    cat list.txt | sttr unique-lines
+    ```
+  </Tab>
+</Tabs>
+
+## Piping with Command Substitution
+
+Use command substitution to embed sttr in larger commands:
+
+```bash
+# Generate token from timestamp
+TOKEN=$(echo "$(date +%s):secret" | sttr sha256)
+curl -H "Authorization: Bearer $TOKEN" https://api.example.com
+
+# URL encode query parameter
+QUERY=$(echo "search terms & stuff" | sttr url-encode)
+curl "https://api.example.com/search?q=$QUERY"
+
+# Generate bcrypt hash
+PASSWORD_HASH=$(echo "user_password" | sttr bcrypt)
+echo "INSERT INTO users (password_hash) VALUES ('$PASSWORD_HASH');"
+
+# Create base64 data URI
+DATA_URI="data:image/png;base64,$(cat logo.png | sttr base64-encode)"
+echo "<img src='$DATA_URI' />"
+```
+
+## Piping from Different Sources
+
+<CodeGroup>
+```bash From echo
+# Simple string
+echo "Hello" | sttr md5
+
+# With newlines
+echo -e "line1\nline2\nline3" | sttr count-lines
+
+# Without trailing newline
+echo -n "no newline" | sttr sha256
+```
+
+```bash From cat
+# Single file
+cat file.txt | sttr base64-encode
+
+# Multiple files
+cat file1.txt file2.txt | sttr md5
+
+# Here document
+cat <<EOF | sttr json -i
+{"name":"John","age":30}
+EOF
+```
+
+```bash From curl
+# JSON API
+curl -s https://api.github.com/repos/abhimanyu003/sttr | sttr json -i
+
+# Follow redirects
+curl -sL https://example.com | sttr extract-urls
+
+# With authentication
+curl -s -H "Authorization: token $TOKEN" https://api.github.com/user | sttr json-yaml
+```
+
+```bash From find
+# Hash all files
+find . -type f -name "*.txt" -exec cat {} \; | sttr md5
+
+# Process each file separately
+find . -type f -name "*.json" -exec sh -c 'cat "$1" | sttr json -i > "$1.tmp" && mv "$1.tmp" "$1"' _ {} \;
+```
+
+```bash From grep
+# Extract and process matches
+grep -oE '[0-9]+' data.txt | sttr count-lines
+
+# Find emails and hash them
+grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' file.txt | \
+  while read email; do
+    echo "$email" | sttr md5
+  done
+```
+
+```bash From ps/systemctl
+# Process command outputs
+ps aux | sttr count-lines
+
+systemctl list-units | grep running | sttr count-words
+
+# Generate report hash
+systemctl status nginx | sttr sha256
+```
+</CodeGroup>
+
+## Advanced Pipeline Examples
+
+<CodeGroup>
+```bash Multi-stage Processing
+# Fetch → Format → Extract → Count
+curl -s https://api.github.com/users/abhimanyu003/repos | \
+  sttr json -i | \
+  grep '"name"' | \
+  sttr count-lines
+
+echo "Found N repositories"
+```
+
+```bash Data Validation
+# Validate JSON before processing
+if cat config.json | sttr json > /dev/null 2>&1; then
+  cat config.json | sttr json-yaml > config.yaml
+  echo "Converted successfully"
+else
+  echo "Invalid JSON"
+  exit 1
+fi
+```
+
+```bash Log Analysis Pipeline
+# Extract → Filter → Sort → Count
+cat /var/log/nginx/access.log | \
+  sttr extract-ip | \
+  sttr unique-lines | \
+  sttr sort-lines | \
+  sttr count-lines
+
+echo "Unique IP addresses"
+```
+
+```bash Encoding Pipeline
+# Compress → Encode → Split
+tar czf - directory/ | \
+  sttr base64-encode | \
+  split -b 1M - archive.tar.gz.b64.
+
+# Reconstruct
+cat archive.tar.gz.b64.* | \
+  sttr base64-decode | \
+  tar xzf -
+```
+</CodeGroup>
+
+## Using with Process Substitution
+
+Bash process substitution creates temporary file descriptors:
+
+```bash
+# Compare two API endpoints
+diff <(curl -s https://api1.example.com | sttr json -i) \
+     <(curl -s https://api2.example.com | sttr json -i)
+
+# Merge and process multiple sources
+cat <(echo "Source 1" | sttr upper) \
+    <(echo "Source 2" | sttr upper) \
+    | sttr unique-lines
+
+# Hash multiple inputs
+paste <(echo "data1" | sttr md5) \
+      <(echo "data2" | sttr md5) \
+      <(echo "data3" | sttr md5)
+```
+
+## Piping to Multiple Destinations
+
+Use `tee` to split output:
+
+```bash
+# Process and save original
+cat data.json | sttr json -i | tee formatted.json | head
+
+# Hash and save to multiple files
+cat large-file.bin | sttr sha256 | tee sha256.txt >(logger "File hash: $(cat)")
+
+# Process and display statistics
+cat log.txt | sttr unique-lines | tee unique.txt | wc -l
+
+# Multi-format output
+cat config.json | tee original.json | sttr json-yaml > config.yaml
+```
+
+## Error Handling in Pipes
+
+<Note>
+By default, a pipeline succeeds if the last command succeeds. Use `set -o pipefail` to catch errors in any pipeline stage.
+</Note>
+
+```bash
+#!/bin/bash
+set -o pipefail  # Exit if any pipeline command fails
+set -e           # Exit on error
+
+# This will catch errors in curl or sttr
+if curl -s https://api.example.com/data | sttr json -i > output.json; then
+  echo "Success"
+else
+  echo "Failed to fetch or parse JSON"
+  exit 1
+fi
+
+# Validate each stage
+if ! curl -s https://api.example.com/data > /tmp/data.json; then
+  echo "Failed to fetch data"
+  exit 1
+fi
+
+if ! cat /tmp/data.json | sttr json -i > output.json; then
+  echo "Failed to format JSON"
+  exit 1
+fi
+
+echo "All stages completed successfully"
+```
+
+## Performance Considerations
+
+<Tip>
+**Pipe buffering**: Large data streams may be buffered by the shell. For real-time processing, use `stdbuf`:
+
+```bash
+stdbuf -oL tail -f /var/log/app.log | sttr extract-ip
+```
+</Tip>
+
+<Tip>
+**Parallel processing**: Use GNU Parallel to process streams in parallel:
+
+```bash
+cat urls.txt | parallel -j 4 "curl -s {} | sttr sha256"
+```
+</Tip>
+
+<Warning>
+**Memory usage**: When piping large files, streaming processors are used automatically. However, buffered processors (like JSON formatters) will load the entire input into memory.
+</Warning>
+
+## Piping vs File Input
+
+| Aspect | Piping | File Input |
+|--------|--------|------------|
+| **Source** | Command output, stdin | File path |
+| **Memory** | Depends on processor | Optimized for large files |
+| **Flexibility** | Composable pipelines | Single-step processing |
+| **Speed** | May involve extra I/O | Direct file access |
+| **Use case** | Dynamic data, APIs | Static files |
+
+**Choose piping when:**
+- Data comes from another command
+- You need to chain multiple operations
+- Working with APIs or streams
+- Building flexible pipelines
+
+**Choose file input when:**
+- Processing existing files
+- File size > 100MB
+- Need to process the same file multiple times
+
+## Integration Examples
+
+<CodeGroup>
+```bash CI/CD Pipeline
+#!/bin/bash
+# Generate deployment manifest hash
+MANIFEST_HASH=$(cat deployment.yaml | sttr sha256)
+echo "Deploying version: $MANIFEST_HASH"
+
+# Validate config before deploy
+if ! cat config.json | sttr json > /dev/null 2>&1; then
+  echo "Invalid config.json"
+  exit 1
+fi
+
+kubectl apply -f deployment.yaml
+```
+
+```bash Log Monitoring
+#!/bin/bash
+# Monitor logs for suspicious IPs
+tail -f /var/log/nginx/access.log | \
+  sttr extract-ip | \
+  while read ip; do
+    if grep -q "$ip" blacklist.txt; then
+      logger "Suspicious IP detected: $ip"
+      echo "$ip" >> blocked-ips.txt
+    fi
+  done
+```
+
+```bash Data Synchronization
+#!/bin/bash
+# Sync and verify API data
+REMOTE_HASH=$(curl -s https://api.example.com/config | sttr sha256)
+LOCAL_HASH=$(cat local-config.json | sttr sha256)
+
+if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
+  echo "Updating local config"
+  curl -s https://api.example.com/config | sttr json -i > local-config.json
+else
+  echo "Config is up to date"
+fi
+```
+
+```bash Backup Verification
+#!/bin/bash
+# Create backup with checksum
+tar czf - /data | tee backup.tar.gz | sttr sha256 > backup.tar.gz.sha256
+
+# Verify backup
+VERIFY_HASH=$(cat backup.tar.gz | sttr sha256)
+EXPECTED_HASH=$(cat backup.tar.gz.sha256)
+
+if [ "$VERIFY_HASH" = "$EXPECTED_HASH" ]; then
+  echo "Backup verified successfully"
+else
+  echo "Backup verification failed!"
+  exit 1
+fi
+```
+</CodeGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Use set -o pipefail">
+    Ensure pipeline errors are caught:
+    ```bash
+    set -o pipefail
+    curl -s https://api.example.com | sttr json -i || echo "Failed"
+    ```
+  </Step>
+
+  <Step title="Validate data before processing">
+    ```bash
+    if echo "$data" | sttr json > /dev/null 2>&1; then
+      echo "$data" | sttr json-yaml
+    fi
+    ```
+  </Step>
+
+  <Step title="Use stdbuf for real-time streams">
+    ```bash
+    stdbuf -oL command | sttr processor
+    ```
+  </Step>
+
+  <Step title="Consider memory for large streams">
+    Use streaming-friendly processors for large data:
+    ```bash
+    large-data-source | sttr sha256  # ✅ Streams
+    large-data-source | sttr json -i # ⚠️  Loads all into memory
+    ```
+  </Step>
+</Steps>
+
+## When to Use Piping
+
+**Best for:**
+- Processing command output
+- API data integration
+- Log file analysis
+- Dynamic data streams
+- Building composable workflows
+- Real-time data processing
+
+**Not ideal for:**
+- Processing static files (use [file input](/usage/file-input))
+- Simple string transformations (use [direct input](/usage/direct-input))
+- When you need the intermediate output saved

@@ -1,0 +1,525 @@
+---
+title: Other Commands
+description: Additional utility commands including character counting, QR codes, text manipulation, and more
+---
+
+Miscellaneous utility commands for text manipulation and analysis.
+
+## Available Commands
+
+<CardGroup cols={2}>
+  <Card title="count-chars" icon="calculator">
+    Count characters in text
+  </Card>
+  
+  <Card title="count-words" icon="calculator">
+    Count words in text
+  </Card>
+  
+  <Card title="remove-spaces" icon="trash">
+    Remove all spaces from text
+  </Card>
+  
+  <Card title="remove-newlines" icon="trash">
+    Remove all newlines from text
+  </Card>
+  
+  <Card title="escape-quotes" icon="quote-right">
+    Escape quote characters
+  </Card>
+  
+  <Card title="reverse" icon="rotate-left">
+    Reverse text character-by-character
+  </Card>
+  
+  <Card title="zeropad" icon="0">
+    Pad numbers with zeros
+  </Card>
+  
+  <Card title="qr" icon="qrcode">
+    Generate QR code in terminal
+  </Card>
+</CardGroup>
+
+---
+
+## Count Characters
+
+<Card title="count-chars" icon="calculator">
+  Count the number of characters (including spaces)
+</Card>
+
+### Usage
+
+```bash
+# Count characters
+echo "hello world" | sttr count-chars
+# Output: 11
+
+# Count with spaces
+echo "hello   world" | sttr count-chars
+# Output: 13
+
+# Count multi-line text
+echo -e "line 1\nline 2" | sttr count-chars
+# Output: 13
+
+# Count file characters
+cat file.txt | sttr count-chars
+
+# Count Unicode characters (counts properly)
+echo "こんにちは" | sttr count-chars
+# Output: 5
+```
+
+**Use cases:**
+- Verify string length
+- Check character limits (Twitter, SMS)
+- Text analysis
+- Validation
+
+**Note:** Counts Unicode characters correctly, not just bytes.
+
+---
+
+## Count Words
+
+<Card title="count-words" icon="calculator">
+  Count the number of words in text
+</Card>
+
+### Usage
+
+```bash
+# Count words
+echo "hello world" | sttr count-words
+# Output: 2
+
+# Count words in sentence
+echo "The quick brown fox" | sttr count-words
+# Output: 4
+
+# Count with multiple spaces
+echo "hello    world" | sttr count-words
+# Output: 2
+
+# Count in file
+cat article.txt | sttr count-words
+
+# Count multi-line
+echo -e "line one\nline two\nline three" | sttr count-words
+# Output: 6
+```
+
+**Use cases:**
+- Document statistics
+- Writing targets
+- Content analysis
+- Reading time estimation
+
+**Note:** Words are separated by whitespace (spaces, tabs, newlines).
+
+---
+
+## Remove Spaces
+
+<Card title="remove-spaces" icon="trash">
+  Remove all spaces and newlines from text
+</Card>
+
+### Usage
+
+```bash
+# Remove all spaces
+echo "hello world" | sttr remove-spaces
+# Output: helloworld
+
+# Remove spaces and newlines
+echo -e "line 1\nline 2" | sttr remove-spaces
+# Output: line1line2
+
+# Use custom separator
+echo "hello world test" | sttr remove-spaces -s "-"
+# Output: hello-world-test
+
+# Remove all whitespace
+echo "  hello   world  " | sttr remove-spaces
+# Output: helloworld
+
+# Compact JSON
+cat formatted.json | sttr remove-spaces
+```
+
+**Aliases:** `remove-space`, `trim-spaces`, `trim-space`
+
+**Flags:**
+- `-s, --separator` - Replace spaces with separator instead of removing
+
+**Use cases:**
+- Minify code/data
+- Remove formatting
+- Clean input
+- Compact strings
+
+---
+
+## Remove Newlines
+
+<Card title="remove-newlines" icon="trash">
+  Remove all newline characters
+</Card>
+
+### Usage
+
+```bash
+# Remove newlines
+echo -e "line 1\nline 2\nline 3" | sttr remove-newlines
+# Output: line 1 line 2 line 3
+
+# Join with custom separator
+echo -e "apple\nbanana\ncherry" | sttr remove-newlines -s ", "
+# Output: apple, banana, cherry
+
+# Single line output
+cat multi-line.txt | sttr remove-newlines
+
+# Remove for CSV
+echo -e "value1\nvalue2\nvalue3" | sttr remove-newlines -s ","
+# Output: value1,value2,value3
+```
+
+**Aliases:** `remove-new-lines`, `trim-newlines`, `trim-new-lines`
+
+**Flags:**
+- `-s, --separator` - Replace newlines with separator (default: space)
+
+**Use cases:**
+- Join lines
+- Create CSV
+- Single-line output
+- Remove line breaks
+
+---
+
+## Escape Quotes
+
+<Card title="escape-quotes" icon="quote-right">
+  Escape single and/or double quotes
+</Card>
+
+### Usage
+
+```bash
+# Escape all quotes (default)
+echo "It's a \"test\"" | sttr escape-quotes
+# Output: It\'s a \"test\"
+
+# Escape only double quotes
+echo 'Say "hello"' | sttr escape-quotes -d
+# Output: Say \"hello\"
+
+# Escape only single quotes
+echo "It's working" | sttr escape-quotes -s
+# Output: It\'s working
+
+# For JSON strings
+echo 'He said "hi"' | sttr escape-quotes -d
+# Output: He said \"hi\"
+
+# For shell commands
+echo "echo 'test'" | sttr escape-quotes -s
+# Output: echo \'test\'
+```
+
+**Aliases:** `esc-quotes`, `escape-quotes`
+
+**Flags:**
+- `-d, --double-quote` - Escape double quotes only
+- `-s, --single-quote` - Escape single quotes only
+- (no flags) - Escape both single and double quotes
+
+**Use cases:**
+- Prepare strings for code
+- JSON generation
+- SQL queries
+- Shell escaping
+- String literals
+
+---
+
+## Reverse Text
+
+<Card title="reverse" icon="rotate-left">
+  Reverse text character by character
+</Card>
+
+### Usage
+
+```bash
+# Reverse text
+echo "hello" | sttr reverse
+# Output: olleh
+
+# Reverse sentence
+echo "hello world" | sttr reverse
+# Output: dlrow olleh
+
+# Palindrome check
+STR="racecar"
+REV=$(echo "$STR" | sttr reverse)
+[ "$STR" = "$REV" ] && echo "Palindrome!" || echo "Not a palindrome"
+
+# Reverse numbers
+echo "12345" | sttr reverse
+# Output: 54321
+```
+
+**Use cases:**
+- Create reversed strings
+- Palindrome detection
+- Text effects
+- Obfuscation
+- Fun/educational
+
+**Note:** Reverses at the character level, not word level. For line reversal, use `reverse-lines`.
+
+---
+
+## Zero Pad
+
+<Card title="zeropad" icon="0">
+  Pad numbers with leading zeros
+</Card>
+
+### Usage
+
+```bash
+# Pad with 5 zeros (default)
+echo "42" | sttr zeropad
+# Output: 0000042
+
+# Custom number of zeros
+echo "7" | sttr zeropad -n 3
+# Output: 0007
+
+# Add prefix
+echo "123" | sttr zeropad -n 4 -p "ID:"
+# Output: ID:00000123
+
+# Negative numbers
+echo "-42" | sttr zeropad -n 5
+# Output: -0000042
+
+# Decimal numbers
+echo "3.14" | sttr zeropad -n 2
+# Output: 003.14
+```
+
+**Flags:**
+- `-n, --number-of-zeros` - Number of zeros to pad (default: 5)
+- `-p, --prefix` - Text to prepend before the padded number
+
+**Use cases:**
+- File naming (file001.txt, file002.txt)
+- ID generation
+- Sorting numbers as strings
+- Fixed-width formatting
+- Sequential numbering
+
+### Examples
+
+```bash
+# Generate numbered file names
+for i in {1..100}; do
+  echo "$i" | sttr zeropad -n 3 -p "file"
+done
+# Output: file001, file002, ... file100
+
+# Format IDs
+echo "42" | sttr zeropad -n 6 -p "USER-"
+# Output: USER-00000042
+```
+
+---
+
+## QR Code
+
+<Card title="qr" icon="qrcode">
+  Generate QR code in the terminal
+</Card>
+
+### Usage
+
+```bash
+# Generate QR code from text
+echo "Hello World" | sttr qr
+# Output: (QR code in terminal)
+
+# Generate QR code from URL
+echo "https://example.com" | sttr qr
+
+# High error correction
+echo "Important data" | sttr qr -l H
+
+# Adjust size
+echo "Large data string" | sttr qr -s 300
+
+# Full blocks (more visible)
+echo "https://github.com" | sttr qr -f
+
+# WiFi QR code
+echo "WIFI:T:WPA;S:MyNetwork;P:password123;;" | sttr qr
+```
+
+**Aliases:** `qrcode`, `qr-code`
+
+**Flags:**
+- `-s, --size` - Size hint (affects error correction, default: 100)
+  - `<200` - Low error correction
+  - `200-299` - Medium error correction  
+  - `≥300` - High error correction
+- `-l, --level` - Error correction level (L/low, M/medium, H/high, default: H)
+- `-f, --full` - Use full blocks instead of half blocks
+
+**Use cases:**
+- Share URLs quickly
+- WiFi credentials
+- Contact information (vCard)
+- Mobile testing
+- Quick data transfer
+- Conference/meeting links
+
+### Special Formats
+
+#### WiFi Network
+
+```bash
+# WPA/WPA2
+echo "WIFI:T:WPA;S:NetworkName;P:password;;" | sttr qr
+
+# WEP
+echo "WIFI:T:WEP;S:NetworkName;P:password;;" | sttr qr
+
+# Open network
+echo "WIFI:T:nopass;S:NetworkName;;" | sttr qr
+```
+
+#### Contact Information (vCard)
+
+```bash
+cat <<EOF | sttr qr
+BEGIN:VCARD
+VERSION:3.0
+FN:John Doe
+TEL:+1234567890
+EMAIL:john@example.com
+END:VCARD
+EOF
+```
+
+#### URL Shortening
+
+```bash
+# Create short URL then generate QR
+SHORT_URL=$(curl -s "https://tinyurl.com/api-create.php?url=$LONG_URL")
+echo "$SHORT_URL" | sttr qr
+```
+
+---
+
+## Practical Examples
+
+### Text Analysis
+
+```bash
+# Get text statistics
+TEXT="The quick brown fox"
+echo "Characters: $(echo "$TEXT" | sttr count-chars)"
+echo "Words: $(echo "$TEXT" | sttr count-words)"
+# Output:
+# Characters: 19
+# Words: 4
+
+# Reading time estimation (200 words/min)
+WORDS=$(cat article.txt | sttr count-words)
+MINUTES=$((WORDS / 200))
+echo "Reading time: $MINUTES minutes"
+```
+
+### Data Cleaning
+
+```bash
+# Clean CSV data
+cat messy.csv | sttr remove-newlines -s "," | sttr remove-spaces
+
+# Compact JSON
+cat formatted.json | sttr remove-spaces | sttr remove-newlines
+
+# Single line output
+cat multi-line.txt | sttr remove-newlines > single-line.txt
+```
+
+### Code Generation
+
+```bash
+# Generate SQL with escaped quotes
+NAME="O'Brien"
+echo "INSERT INTO users (name) VALUES ('$NAME');" | \
+  sttr escape-quotes -s
+# Output: INSERT INTO users (name) VALUES (\'O\'Brien\');
+
+# Generate JSON
+VALUE='He said "hello"'
+echo "{\"message\": \"$VALUE\"}" | sttr escape-quotes -d
+```
+
+### File Naming
+
+```bash
+# Create sequentially numbered files
+for i in {1..50}; do
+  FILENAME=$(echo "$i" | sttr zeropad -n 3 -p "image")
+  touch "${FILENAME}.jpg"
+done
+# Creates: image001.jpg, image002.jpg, ..., image050.jpg
+```
+
+### QR Code Sharing
+
+```bash
+# Share current directory listing
+ls -1 | sttr remove-newlines -s ", " | sttr qr
+
+# Share WiFi credentials
+read -p "Network: " SSID
+read -sp "Password: " PASS
+echo "WIFI:T:WPA;S:$SSID;P:$PASS;;" | sttr qr
+
+# Share meeting link
+echo "https://meet.google.com/abc-defg-hij" | sttr qr
+```
+
+---
+
+## Command Combinations
+
+```bash
+# Count then pad
+COUNT=$(cat file.txt | sttr count-words)
+echo "$COUNT" | sttr zeropad -n 6 -p "WORDS:"
+# Output: WORDS:000042
+
+# Clean and reverse
+echo "  hello world  " | sttr remove-spaces | sttr reverse
+# Output: dlrowolleh
+
+# Escape and QR
+echo 'Contact: "John Doe" <john@example.com>' | \
+  sttr escape-quotes | sttr qr
+
+# Multi-step cleaning
+cat data.txt | \
+  sttr remove-spaces | \
+  sttr remove-newlines | \
+  sttr lower
+```

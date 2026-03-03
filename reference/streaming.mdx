@@ -1,0 +1,476 @@
+---
+title: Streaming Architecture
+description: How sttr efficiently processes large files with streaming
+---
+
+sttr uses a sophisticated streaming architecture to handle large files efficiently without loading entire files into memory. This page explains the streaming system and how processors leverage it.
+
+## Overview
+
+All processors in sttr support streaming through the `TransformStream` function (defined in `processors/processor.go:163-181`). This enables sttr to:
+
+- Process files larger than available RAM
+- Start producing output immediately
+- Handle data from pipes and streams efficiently
+- Optimize based on processor characteristics
+
+## Processor Interface
+
+The core `Processor` interface is defined in `processors/processor.go:89-103`:
+
+```go
+type Processor interface {
+	// Name is the name of a processor used as the CLI command, 
+	// must be one lowercase word, hyphens are allowed
+	Name() string
+
+	// Alias is an optional array of alias names for the processor
+	Alias() []string
+
+	// Transform is the text transformation function, 
+	// implemented by the processor
+	Transform(data []byte, opts ...Flag) (string, error)
+
+	// Flags are flags that could be used to transform the text
+	Flags() []Flag
+}
+```
+
+<Note>
+  Every processor must implement the `Processor` interface. The `Transform` method is called by the streaming system with appropriately-sized chunks.
+</Note>
+
+## Streaming Configuration
+
+Processors can customize their streaming behavior by implementing the `ConfigurableStreamingProcessor` interface:
+
+### StreamingConfig Type
+
+Defined in `processors/processor.go:105-113`:
+
+```go
+type StreamingConfig struct {
+	// ChunkSize defines the size of chunks to read from input (default: 64KB)
+	ChunkSize int
+	// BufferOutput whether to buffer output before writing 
+	// (useful for processors that need full input)
+	BufferOutput bool
+	// LineByLine whether to process input line by line 
+	// (useful for line-based processors)
+	LineByLine bool
+}
+```
+
+<ParamField path="ChunkSize" type="int" default="65536">
+  The size in bytes of each chunk to read from input. Default is 64KB (64 * 1024).
+  
+  **When to adjust:**
+  - Increase for better I/O performance with large files
+  - Decrease for lower memory usage with constrained resources
+</ParamField>
+
+<ParamField path="BufferOutput" type="bool" default="false">
+  Whether to buffer all input before processing.
+  
+  **Set to `true` when:**
+  - Processor needs to see entire input (e.g., sorting, counting)
+  - Output depends on analyzing all data first
+  
+  **Examples:** `sort-lines`, `count-lines`, `unique-lines`, hash functions
+</ParamField>
+
+<ParamField path="LineByLine" type="bool" default="false">
+  Whether to process input one line at a time.
+  
+  **Set to `true` when:**
+  - Each line can be processed independently
+  - Order matters but only within lines
+  
+  **Examples:** `number-lines`, line-based transformations
+</ParamField>
+
+### ConfigurableStreamingProcessor Interface
+
+Defined in `processors/processor.go:115-122`:
+
+```go
+type ConfigurableStreamingProcessor interface {
+	Processor
+	// GetStreamingConfig returns the streaming configuration for this processor
+	GetStreamingConfig() StreamingConfig
+}
+```
+
+## Streaming Modes
+
+The `TransformStream` function supports three streaming modes:
+
+### 1. Chunked Processing (Default)
+
+Processes input in fixed-size chunks without buffering. Best for processors that can handle partial data.
+
+**Example: Hex Encoding** (`processors/hex.go:12-18`):
+
+```go
+func (p HexEncode) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024, // 64KB chunks
+		BufferOutput: false,     // Can encode chunks directly
+		LineByLine:   false,
+	}
+}
+```
+
+**Usage:**
+```bash
+# Stream a large binary file
+cat largefile.bin | sttr hex-encode > output.hex
+
+# Works efficiently even with GB files
+dd if=/dev/zero bs=1M count=1024 | sttr hex-encode | head
+```
+
+### 2. Buffered Processing
+
+Reads all input before processing. Required for operations that need complete data.
+
+**Example: Hash Functions** (`processors/crypto.go:17-24`):
+
+```go
+func (p MD5) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024, // 64KB chunks
+		BufferOutput: true,      // Hash functions need full input
+		LineByLine:   false,
+	}
+}
+```
+
+**Usage:**
+```bash
+# Hash a large file
+cat largefile.bin | sttr md5
+# Efficiently reads in chunks but computes hash on complete data
+
+# All hash functions work this way
+cat data.txt | sttr sha256
+```
+
+**Other processors using buffered mode:**
+- `sort-lines` - needs all lines to sort
+- `unique-lines` - needs to track all lines
+- `count-chars` - needs complete input to count
+- All hash functions (MD5, SHA family, BLAKE2)
+
+### 3. Line-by-Line Processing
+
+Processes input one line at a time using a scanner. Ideal for line-oriented operations.
+
+**Implementation** (`processors/processor.go:184-197`):
+
+```go
+func transformStreamLineByLine(processor Processor, reader io.Reader, 
+    writer io.Writer, opts ...Flag) error {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		result, err := processor.Transform(line, opts...)
+		if err != nil {
+			return err
+		}
+		if _, err := writer.Write([]byte(result + "\n")); err != nil {
+			return err
+		}
+	}
+	return scanner.Err()
+}
+```
+
+<Warning>
+  Line-by-line mode has a maximum line length limit (default 64KB in bufio.Scanner). Very long lines may cause errors.
+</Warning>
+
+## Default Streaming Configuration
+
+Defined in `processors/processor.go:156-161`:
+
+```go
+var DefaultStreamingConfig = StreamingConfig{
+	ChunkSize:    64 * 1024, // 64KB
+	BufferOutput: false,
+	LineByLine:   false,
+}
+```
+
+Processors that don't implement `ConfigurableStreamingProcessor` use these defaults.
+
+## Processors That Prefer Streaming
+
+The `PreferStream` function (`processors/processor.go:248-294`) determines which processors benefit most from streaming:
+
+### Always Preferred:
+
+```go
+streamingFriendly := []string{
+	"md5", "sha1", "sha224", "sha256", "sha384", "sha512",
+	"hex-encode", "hex-decode", 
+	"base64-encode", "base64-decode",
+	"base32-encode", "base32-decode", 
+	"upper", "lower",
+}
+```
+
+### Why These Processors Prefer Streaming:
+
+<CardGroup cols={2}>
+  <Card title="Hash Functions" icon="fingerprint">
+    Can process chunks incrementally, then finalize hash
+  </Card>
+  
+  <Card title="Encoders" icon="code">
+    Can encode/decode chunks independently
+  </Card>
+  
+  <Card title="Case Conversion" icon="text">
+    Each character transformed independently
+  </Card>
+  
+  <Card title="Line Operations" icon="list">
+    Process one line at a time efficiently
+  </Card>
+</CardGroup>
+
+## Real-World Examples
+
+### Example 1: Case Conversion (Chunked)
+
+`processors/strings.go:20-26` - Lower processor:
+
+```go
+func (p Lower) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024, // 64KB chunks
+		BufferOutput: false,     // Can process chunks directly
+		LineByLine:   false,
+	}
+}
+```
+
+**Streams efficiently:**
+```bash
+# Convert 1GB file to lowercase without loading into memory
+cat huge.txt | sttr lower > huge_lower.txt
+```
+
+### Example 2: Line Counting (Buffered)
+
+`processors/lines.go:18-24` - CountLines processor:
+
+```go
+func (p CountLines) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024, // 64KB chunks
+		BufferOutput: true,      // Need full input to count lines accurately
+		LineByLine:   false,
+	}
+}
+```
+
+**Why buffered:** Must see all input to return accurate count.
+
+```bash
+cat largefile.log | sttr count-lines
+# Reads in chunks efficiently, counts total lines
+```
+
+### Example 3: Sorting Lines (Buffered)
+
+`processors/lines.go:72-78` - SortLines processor:
+
+```go
+func (p SortLines) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024, // 64KB chunks
+		BufferOutput: true,      // Need all lines to sort
+		LineByLine:   false,
+	}
+}
+```
+
+**Why buffered:** Must collect all lines before sorting.
+
+### Example 4: Number Lines (Buffered)
+
+`processors/numberlines.go:13-19`:
+
+```go
+func (p NumberLines) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024, // 64KB chunks
+		BufferOutput: true,      // Need to count lines first
+		LineByLine:   false,     // Need full input to calculate max digits
+	}
+}
+```
+
+**Why buffered:** Needs to know total line count to calculate proper number width.
+
+## Implementing Streaming in Custom Processors
+
+### Non-Streaming Processor (Simple)
+
+If your processor works fine with defaults:
+
+```go
+type Simple struct{}
+
+func (p Simple) Name() string { return "simple" }
+func (p Simple) Alias() []string { return nil }
+func (p Simple) Flags() []Flag { return nil }
+
+func (p Simple) Transform(data []byte, _ ...Flag) (string, error) {
+	// Your transformation logic
+	return string(data), nil
+}
+
+// No GetStreamingConfig needed - uses defaults
+```
+
+### Streaming Processor (Chunked)
+
+For processors that can handle partial data:
+
+```go
+type ChunkedProcessor struct{}
+
+func (p ChunkedProcessor) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    128 * 1024, // Larger chunks for better I/O
+		BufferOutput: false,      // Process chunks as they arrive
+		LineByLine:   false,
+	}
+}
+
+func (p ChunkedProcessor) Transform(data []byte, _ ...Flag) (string, error) {
+	// This will be called multiple times with chunks
+	// Each chunk processed independently
+	return processChunk(data), nil
+}
+```
+
+### Streaming Processor (Buffered)
+
+For processors that need complete input:
+
+```go
+type BufferedProcessor struct{}
+
+func (p BufferedProcessor) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024,
+		BufferOutput: true,  // Wait for all input
+		LineByLine:   false,
+	}
+}
+
+func (p BufferedProcessor) Transform(data []byte, _ ...Flag) (string, error) {
+	// This will be called ONCE with all data
+	return processComplete(data), nil
+}
+```
+
+### Streaming Processor (Line-by-Line)
+
+For line-oriented processors:
+
+```go
+type LineProcessor struct{}
+
+func (p LineProcessor) GetStreamingConfig() StreamingConfig {
+	return StreamingConfig{
+		ChunkSize:    64 * 1024,
+		BufferOutput: false,
+		LineByLine:   true,  // Process line by line
+	}
+}
+
+func (p LineProcessor) Transform(data []byte, _ ...Flag) (string, error) {
+	// This will be called ONCE PER LINE
+	// data contains a single line (without \n)
+	return processLine(data), nil
+}
+```
+
+## Performance Considerations
+
+<AccordionGroup>
+  <Accordion title="Chunk Size Selection">
+    - **Default 64KB**: Good balance for most use cases
+    - **Larger (128KB-1MB)**: Better for high-throughput disk I/O
+    - **Smaller (8KB-32KB)**: Lower memory usage, good for network streams
+    - Consider your typical input size and available memory
+  </Accordion>
+  
+  <Accordion title="Buffered vs. Streaming Trade-offs">
+    **Buffered (`BufferOutput: true`):**
+    - ✅ Simple to implement
+    - ✅ Works when you need complete data
+    - ❌ Memory usage grows with input size
+    - ❌ No output until all input received
+    
+    **Streaming (`BufferOutput: false`):**
+    - ✅ Constant memory usage
+    - ✅ Immediate output
+    - ✅ Works with unlimited input
+    - ❌ More complex if you need context
+  </Accordion>
+  
+  <Accordion title="Line-by-Line Limitations">
+    - Uses `bufio.Scanner` with default 64KB line buffer
+    - Lines longer than buffer size will cause errors
+    - Not suitable for binary data or very long lines
+    - Perfect for log files and typical text processing
+  </Accordion>
+</AccordionGroup>
+
+## Utility Functions
+
+### CanStream
+
+Defined in `processors/processor.go:242-246`:
+
+```go
+func CanStream(processor Processor) bool {
+	return true
+}
+```
+
+All processors support streaming through the universal `TransformStream` function.
+
+### PreferStream
+
+Defined in `processors/processor.go:248-294`. Returns `true` if a processor benefits from streaming:
+
+```go
+if sp, ok := processor.(ConfigurableStreamingProcessor); ok {
+	config := sp.GetStreamingConfig()
+	// Check configuration to determine preference
+}
+```
+
+Used by the CLI to decide when to enable streaming mode for large inputs.
+
+## Summary: Choosing Your Streaming Strategy
+
+| Use Case | Config | Example Processors |
+|----------|--------|-------------------|
+| Independent chunks | `BufferOutput: false` | `hex-encode`, `upper`, `lower` |
+| Need complete input | `BufferOutput: true` | `sort-lines`, `md5`, `count-lines` |
+| Line-oriented | `LineByLine: true` | Custom line processors |
+| Simple transformation | Use defaults | Most simple processors |
+
+## See Also
+
+- [All Commands](/reference/all-commands) - Complete processor reference
+- [Flags Reference](/reference/flags) - How to add options to processors
+- [Contributing Guide](/development/contributing) - Add your own processors

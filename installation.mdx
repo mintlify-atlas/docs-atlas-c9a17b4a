@@ -1,0 +1,298 @@
+---
+title: Installation
+description: Install sttr on macOS, Linux, Windows, or using Docker
+---
+
+Choose your preferred installation method based on your platform and package manager.
+
+## Quick Install (Recommended)
+
+The fastest way to install sttr is using the installation script. It will automatically download the latest release and install it to `./bin`:
+
+```bash
+curl -sfL https://raw.githubusercontent.com/abhimanyu003/sttr/main/install.sh | sh
+```
+
+<Note>
+Make sure `./bin` is in your `PATH` to run sttr from anywhere.
+</Note>
+
+## Package Managers
+
+<Tabs>
+  <Tab title="macOS">
+    ### Homebrew
+    
+    The recommended way to install sttr on macOS:
+    
+    ```bash
+    brew install abhimanyu003/sttr/sttr
+    ```
+    
+    <Tip>
+    Homebrew will automatically handle PATH configuration and updates.
+    </Tip>
+    
+    ### Webi
+    
+    Alternative installation using [webi](https://webinstall.dev/sttr/):
+    
+    ```bash
+    curl -sS https://webi.sh/sttr | sh
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+    ### Snap
+    
+    Install from the Snap Store (works on Ubuntu and other Snap-enabled distros):
+    
+    ```bash
+    sudo snap install sttr
+    ```
+    
+    ### Arch Linux (AUR)
+    
+    Install from the AUR using your favorite AUR helper:
+    
+    ```bash
+    yay -S sttr-bin
+    ```
+    
+    Or with `paru`:
+    
+    ```bash
+    paru -S sttr-bin
+    ```
+    
+    ### Webi
+    
+    ```bash
+    curl -sS https://webi.sh/sttr | sh
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    ### Winget
+    
+    Install using Windows Package Manager:
+    
+    ```powershell
+    winget install -e --id abhimanyu003.sttr
+    ```
+    
+    ### Scoop
+    
+    Add the sttr bucket and install:
+    
+    ```powershell
+    scoop bucket add sttr https://github.com/abhimanyu003/scoop-bucket.git
+    scoop install sttr
+    ```
+    
+    ### Webi
+    
+    ```powershell
+    curl.exe https://webi.ms/sttr | powershell
+    ```
+    
+    <Note>
+    After installation, you may need to restart your terminal for the PATH changes to take effect.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Docker
+
+Run sttr in a container without installing it locally:
+
+```bash
+docker run -it --rm -e TERM=xterm-256color ghcr.io/abhimanyu003/sttr:latest
+```
+
+<Tip>
+You can create an alias for easier usage:
+
+```bash
+alias sttr='docker run -it --rm -e TERM=xterm-256color ghcr.io/abhimanyu003/sttr:latest'
+```
+
+Add this to your `.bashrc`, `.zshrc`, or shell configuration file.
+</Tip>
+
+### Use in Docker Projects
+
+You can use the Docker image in your CI/CD pipelines or Docker Compose:
+
+```yaml
+version: '3.8'
+services:
+  sttr:
+    image: ghcr.io/abhimanyu003/sttr:latest
+    stdin_open: true
+    tty: true
+```
+
+## X-CMD
+
+If you're using [x-cmd](https://x-cmd.com), installation is simple:
+
+```bash
+x install sttr
+```
+
+## Go Install
+
+If you have Go installed, you can build from source:
+
+```bash
+go install github.com/abhimanyu003/sttr@latest
+```
+
+<Warning>
+Make sure `$GOPATH/bin` is in your `PATH` to run the installed binary.
+</Warning>
+
+## Binary Downloads
+
+Download pre-compiled binaries for your platform from the [releases page](https://github.com/abhimanyu003/sttr/releases).
+
+<Tabs>
+  <Tab title="macOS">
+    ### Universal Binary
+    
+    Download the multi-architecture binary (supports both Intel and Apple Silicon):
+    
+    ```bash
+    # Download and extract
+    curl -LO https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Darwin_all.tar.gz
+    tar -xzf sttr_Darwin_all.tar.gz
+    
+    # Move to PATH
+    sudo mv sttr /usr/local/bin/
+    
+    # Make executable
+    chmod +x /usr/local/bin/sttr
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+    ### AMD64
+    
+    ```bash
+    curl -LO https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Linux_x86_64.tar.gz
+    tar -xzf sttr_Linux_x86_64.tar.gz
+    sudo mv sttr /usr/local/bin/
+    chmod +x /usr/local/bin/sttr
+    ```
+    
+    ### ARM64
+    
+    ```bash
+    curl -LO https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Linux_arm64.tar.gz
+    tar -xzf sttr_Linux_arm64.tar.gz
+    sudo mv sttr /usr/local/bin/
+    chmod +x /usr/local/bin/sttr
+    ```
+    
+    ### i386
+    
+    ```bash
+    curl -LO https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Linux_i386.tar.gz
+    tar -xzf sttr_Linux_i386.tar.gz
+    sudo mv sttr /usr/local/bin/
+    chmod +x /usr/local/bin/sttr
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    Download the appropriate ZIP file for your architecture:
+    
+    - [AMD64](https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Windows_x86_64.zip)
+    - [ARM64](https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Windows_arm64.zip)
+    - [i386](https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Windows_i386.zip)
+    
+    Extract the ZIP file and add the directory containing `sttr.exe` to your PATH.
+  </Tab>
+  
+  <Tab title="FreeBSD">
+    ### AMD64
+    
+    ```bash
+    curl -LO https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Freebsd_x86_64.tar.gz
+    tar -xzf sttr_Freebsd_x86_64.tar.gz
+    sudo mv sttr /usr/local/bin/
+    chmod +x /usr/local/bin/sttr
+    ```
+    
+    ### ARM64
+    
+    ```bash
+    curl -LO https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Freebsd_arm64.tar.gz
+    tar -xzf sttr_Freebsd_arm64.tar.gz
+    sudo mv sttr /usr/local/bin/
+    chmod +x /usr/local/bin/sttr
+    ```
+    
+    ### i386
+    
+    ```bash
+    curl -LO https://github.com/abhimanyu003/sttr/releases/latest/download/sttr_Freebsd_i386.tar.gz
+    tar -xzf sttr_Freebsd_i386.tar.gz
+    sudo mv sttr /usr/local/bin/
+    chmod +x /usr/local/bin/sttr
+    ```
+  </Tab>
+</Tabs>
+
+## Verify Installation
+
+After installation, verify that sttr is working correctly:
+
+```bash
+sttr version
+```
+
+You should see the version information displayed.
+
+<Tip>
+Run `sttr -h` to see all available commands and options.
+</Tip>
+
+## Shell Completion
+
+Generate shell completion scripts for your shell:
+
+<CodeGroup>
+```bash Bash
+sttr completion bash > /etc/bash_completion.d/sttr
+```
+
+```bash Zsh
+sttr completion zsh > "${fpath[1]}/_sttr"
+```
+
+```bash Fish
+sttr completion fish > ~/.config/fish/completions/sttr.fish
+```
+
+```powershell PowerShell
+sttr completion powershell > sttr.ps1
+```
+</CodeGroup>
+
+## Updating
+
+To update sttr, use the same method you used to install it:
+
+- **Homebrew**: `brew upgrade sttr`
+- **Snap**: `sudo snap refresh sttr`
+- **Winget**: `winget upgrade abhimanyu003.sttr`
+- **Scoop**: `scoop update sttr`
+- **Go**: `go install github.com/abhimanyu003/sttr@latest`
+
+## Next Steps
+
+<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+  Learn how to use sttr with practical examples
+</Card>

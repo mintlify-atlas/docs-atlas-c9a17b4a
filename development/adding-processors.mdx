@@ -1,0 +1,430 @@
+---
+title: Adding Processors
+description: Step-by-step guide to adding a new text transformation processor to sttr
+---
+
+This guide walks you through adding a new processor to sttr using the **Zeropad** processor as a complete working example.
+
+## What is a Processor?
+
+A processor is a struct that implements the `Processor` interface and performs a specific text transformation. Each processor automatically becomes:
+
+- A CLI command (e.g., `sttr zeropad`)
+- An option in the interactive menu
+- Documented in the help system
+
+## The Processor Interface
+
+Every processor must implement these methods:
+
+```go
+type Processor interface {
+    Name() string                                      // CLI command name
+    Alias() []string                                   // Alternative command names
+    Transform(data []byte, opts ...Flag) (string, error) // The transformation logic
+    Flags() []Flag                                     // Command-line flags
+}
+```
+
+Plus these methods for the interactive UI:
+
+```go
+Title() string       // Display title in the menu
+Description() string // Short description
+FilterValue() string // Text used when filtering/searching
+```
+
+## Step-by-Step: Creating the Zeropad Processor
+
+Let's build the Zeropad processor, which pads numbers with zeros.
+
+<Steps>
+
+### Step 1: Define the Struct
+
+Create a new struct in the appropriate file under `processors/`. For Zeropad, it's in `processors/processor.go:302`:
+
+```go
+// Zeropad is an Example processor to show how to add text processors,
+// it checks if the data is a number and pads it with zeros
+type Zeropad struct{}
+```
+
+The struct can be empty or contain configuration fields if needed.
+
+### Step 2: Implement Name()
+
+The name becomes the CLI command and must be lowercase with hyphens:
+
+```go
+func (p Zeropad) Name() string {
+    return "zeropad"
+}
+```
+
+Users will run: `sttr zeropad 42`
+
+### Step 3: Implement Alias()
+
+Provide alternative command names, or return `nil` if none:
+
+```go
+func (p Zeropad) Alias() []string {
+    return nil
+}
+```
+
+For a processor with aliases:
+```go
+func (p SomeProcessor) Alias() []string {
+    return []string{"sp", "some-proc"}
+}
+```
+
+### Step 4: Implement Transform()
+
+This is the core transformation logic. From `processors/processor.go:312-340`:
+
+```go
+func (p Zeropad) Transform(data []byte, f ...Flag) (string, error) {
+    strIn := strings.TrimSpace(string(data))
+    neg := ""
+    i, err := strconv.ParseFloat(strIn, 64)
+    if err != nil {
+        return "", fmt.Errorf("number expected: '%s'", data)
+    }
+    if i < 0 {
+        neg = "-"
+        data = data[1:]
+    }
+
+    var n int
+    pre := ""
+    for _, flag := range f {
+        if flag.Short == "n" {
+            x, ok := flag.Value.(uint)
+            if ok {
+                n = int(x)
+            }
+        } else if flag.Short == "p" {
+            x, ok := flag.Value.(string)
+            if ok {
+                pre = x
+            }
+        }
+    }
+    return fmt.Sprintf("%s%s%s%s", pre, neg, strings.Repeat("0", n), data), nil
+}
+```
+
+**Key points:**
+- Accept `data []byte` as input
+- Parse flags from the `f ...Flag` parameter
+- Return the transformed string or an error
+- Handle edge cases (negative numbers, invalid input)
+
+### Step 5: Implement Flags()
+
+Define command-line flags for your processor. From `processors/processor.go:342-359`:
+
+```go
+func (p Zeropad) Flags() []Flag {
+    return []Flag{
+        {
+            Name:  "number-of-zeros",
+            Short: "n",
+            Desc:  "Number of zeros to be padded",
+            Value: 5,
+            Type:  FlagUint,
+        },
+        {
+            Name:  "prefix",
+            Short: "p",
+            Desc:  "The number get prefixed with this",
+            Value: "",
+            Type:  FlagString,
+        },
+    }
+}
+```
+
+**Flag types:**
+- `FlagInt` - Integer values
+- `FlagUint` - Unsigned integer values
+- `FlagBool` - Boolean flags
+- `FlagString` - String values
+
+Users can then run:
+```bash
+sttr zeropad 42 -n 10        # Pad with 10 zeros
+sttr zeropad 42 -p "ID:"     # Add prefix
+```
+
+If your processor doesn't need flags:
+```go
+func (p SomeProcessor) Flags() []Flag {
+    return nil
+}
+```
+
+### Step 6: Implement Title()
+
+Provide a display title for the interactive menu. From `processors/processor.go:361-364`:
+
+```go
+func (p Zeropad) Title() string {
+    title := cases.Title(language.Und, cases.NoLower).String(p.Name())
+    return fmt.Sprintf("%s (%s)", title, p.Name())
+}
+```
+
+This displays as: **"Zeropad (zeropad)"** in the menu.
+
+The pattern is typically: `"Friendly Name (command-name)"`
+
+### Step 7: Implement Description()
+
+Provide a short description. From `processors/processor.go:366-368`:
+
+```go
+func (p Zeropad) Description() string {
+    return "Pad a number with zeros"
+}
+```
+
+This appears in:
+- The interactive menu under each processor
+- Help text: `sttr zeropad --help`
+
+### Step 8: Implement FilterValue()
+
+Return the text used when users search/filter in the interactive menu. From `processors/processor.go:370-372`:
+
+```go
+func (p Zeropad) FilterValue() string {
+    return p.Title()
+}
+```
+
+Most processors just return `p.Title()`, but you could combine multiple searchable terms:
+```go
+func (p Zeropad) FilterValue() string {
+    return p.Title() + " " + p.Description()
+}
+```
+
+### Step 9: Add to Processor List
+
+Register your processor in `processors/processor.go:15-87`:
+
+```go
+var List = []list.Item{
+    Adler32{},
+    ASCII85Decoding{},
+    // ... other processors
+    Zeropad{},  // Add your processor here
+}
+```
+
+**Important:** The order in this list determines the order in the interactive menu.
+
+### Step 10: Generate the Command
+
+Run the code generator to create the CLI command:
+
+```bash
+go generate
+```
+
+This creates `cmd/processor_zeropad.go` with:
+- Cobra command definition
+- Flag parsing
+- Input handling (stdin, files, direct strings)
+- Streaming support for large files
+
+</Steps>
+
+## Complete Example: Zeropad
+
+Here's the complete Zeropad processor in one place:
+
+```go
+package processors
+
+import (
+    "fmt"
+    "strconv"
+    "strings"
+    "golang.org/x/text/cases"
+    "golang.org/x/text/language"
+)
+
+type Zeropad struct{}
+
+func (p Zeropad) Name() string {
+    return "zeropad"
+}
+
+func (p Zeropad) Alias() []string {
+    return nil
+}
+
+func (p Zeropad) Transform(data []byte, f ...Flag) (string, error) {
+    strIn := strings.TrimSpace(string(data))
+    neg := ""
+    i, err := strconv.ParseFloat(strIn, 64)
+    if err != nil {
+        return "", fmt.Errorf("number expected: '%s'", data)
+    }
+    if i < 0 {
+        neg = "-"
+        data = data[1:]
+    }
+
+    var n int
+    pre := ""
+    for _, flag := range f {
+        if flag.Short == "n" {
+            x, ok := flag.Value.(uint)
+            if ok {
+                n = int(x)
+            }
+        } else if flag.Short == "p" {
+            x, ok := flag.Value.(string)
+            if ok {
+                pre = x
+            }
+        }
+    }
+    return fmt.Sprintf("%s%s%s%s", pre, neg, strings.Repeat("0", n), data), nil
+}
+
+func (p Zeropad) Flags() []Flag {
+    return []Flag{
+        {
+            Name:  "number-of-zeros",
+            Short: "n",
+            Desc:  "Number of zeros to be padded",
+            Value: 5,
+            Type:  FlagUint,
+        },
+        {
+            Name:  "prefix",
+            Short: "p",
+            Desc:  "The number get prefixed with this",
+            Value: "",
+            Type:  FlagString,
+        },
+    }
+}
+
+func (p Zeropad) Title() string {
+    title := cases.Title(language.Und, cases.NoLower).String(p.Name())
+    return fmt.Sprintf("%s (%s)", title, p.Name())
+}
+
+func (p Zeropad) Description() string {
+    return "Pad a number with zeros"
+}
+
+func (p Zeropad) FilterValue() string {
+    return p.Title()
+}
+```
+
+## Usage Examples
+
+After running `go generate` and building, users can:
+
+```bash
+# Default: 5 zeros
+sttr zeropad 42
+# Output: 0000042
+
+# Custom number of zeros
+sttr zeropad 42 -n 10
+# Output: 000000000042
+
+# With prefix
+sttr zeropad 42 -p "ID:"
+# Output: ID:0000042
+
+# Combine flags
+sttr zeropad 42 -n 8 -p "ORDER-"
+# Output: ORDER-0000000042
+
+# Interactive mode
+sttr
+# Enter: 42
+# Search: zeropad
+# Select and see result
+```
+
+## Organizing Processors
+
+Processors are grouped by functionality:
+
+- `processors/strings.go` - String case conversions, reverse, etc.
+- `processors/crypto.go` - Hashing functions (MD5, SHA, etc.)
+- `processors/base64.go` - Base64 encoding/decoding
+- `processors/json.go` - JSON operations
+- `processors/lines.go` - Line-based operations
+- Create new files for new categories
+
+## Testing Your Processor
+
+Create a test file (e.g., `processors/processor_test.go`):
+
+```go
+func TestZeropad(t *testing.T) {
+    p := Zeropad{}
+    
+    result, err := p.Transform([]byte("42"), Flag{Short: "n", Value: uint(5)})
+    if err != nil {
+        t.Errorf("unexpected error: %v", err)
+    }
+    if result != "0000042" {
+        t.Errorf("expected '0000042', got '%s'", result)
+    }
+}
+```
+
+Run tests:
+```bash
+go test ./processors/...
+```
+
+## Advanced: Streaming Support
+
+For processors that benefit from streaming (large files), implement `ConfigurableStreamingProcessor`:
+
+```go
+func (p YourProcessor) GetStreamingConfig() StreamingConfig {
+    return StreamingConfig{
+        ChunkSize:    64 * 1024, // 64KB chunks
+        BufferOutput: false,     // Don't buffer output
+        LineByLine:   false,     // Don't process line-by-line
+    }
+}
+```
+
+See `processors/strings.go:20-26` for examples.
+
+## Checklist
+
+Before submitting your processor:
+
+- [ ] Implements all required methods
+- [ ] Added to `processors.List`
+- [ ] Ran `go generate` successfully
+- [ ] Tested with various inputs
+- [ ] Added tests in `*_test.go`
+- [ ] Handles errors gracefully
+- [ ] Documented with comments
+- [ ] Works in both CLI and interactive modes
+
+## Next Steps
+
+- See [Architecture](/development/architecture) to understand the internals
+- See [Contributing](/development/contributing) to submit your processor
+- Look at existing processors in `processors/` for more examples

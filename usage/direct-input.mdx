@@ -1,0 +1,420 @@
+---
+title: Direct Input
+description: Pass strings directly as command arguments for quick transformations
+icon: 'code'
+---
+
+## Overview
+
+Direct input mode allows you to pass text as a command-line argument for immediate transformation. This is the fastest way to use sttr for simple, one-off operations.
+
+```bash
+sttr <processor> "your text here"
+```
+
+## Basic Syntax
+
+<CodeGroup>
+```bash General Format
+sttr <processor-name> "string to transform"
+```
+
+```bash Hash Example
+sttr md5 "Hello World"
+# Output: b10a8db164e0754105b7a99be72e3fe5
+```
+
+```bash Encoding Example
+sttr base64-encode "Hello World"
+# Output: SGVsbG8gV29ybGQ=
+```
+
+```bash Case Conversion
+sttr upper "hello world"
+# Output: HELLO WORLD
+```
+</CodeGroup>
+
+## How It Works
+
+Every processor command (generated in `cmd/processor_*.go` files) follows this pattern from `cmd/processor_md5.go:38-72`:
+
+```go
+if len(args) == 0 {
+    // Handle stdin/interactive input
+    in := []byte(utils.ReadMultilineInput())
+    out, err = p.Transform(in, flags...)
+} else {
+    // Check if it's a file
+    if fi, err := os.Stat(args[0]); err == nil && !fi.IsDir() {
+        // Process as file...
+    } else {
+        // Not a file, treat as string input
+        out, err = p.Transform([]byte(args[0]), flags...)
+    }
+}
+```
+
+If the argument isn't a file path, sttr treats it as direct string input.
+
+## Common Use Cases
+
+<Tabs>
+  <Tab title="Hashing">
+    Generate checksums and hashes instantly:
+    
+    ```bash
+    # MD5
+    sttr md5 "password123"
+    # 482c811da5d5b4bc6d497ffa98491e38
+    
+    # SHA-256
+    sttr sha256 "Hello World"
+    # a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e
+    
+    # SHA-512
+    sttr sha512 "secret"
+    # bd2b1aaf7ef4f09be9f52ce2d8d599674d81aa9d6a4421696dc4d93dd0619d682ce56b4d64a9ef097761ced99e0f67265b5f76085e5b0ee7ca4696b2ad6fe2b2
+    
+    # bcrypt (with cost flag)
+    sttr bcrypt "mypassword"
+    # $2a$10$...
+    ```
+  </Tab>
+
+  <Tab title="Encoding/Decoding">
+    Transform between different encodings:
+    
+    ```bash
+    # Base64
+    sttr base64-encode "Hello World"
+    # SGVsbG8gV29ybGQ=
+    
+    sttr base64-decode "SGVsbG8gV29ybGQ="
+    # Hello World
+    
+    # URL Encoding
+    sttr url-encode "hello world & stuff"
+    # hello+world+%26+stuff
+    
+    # Hex
+    sttr hex-encode "Hello"
+    # 48656c6c6f
+    
+    # ASCII85
+    sttr ascii85-encode "Hello World"
+    # 87cURD]j7BEbo80
+    ```
+  </Tab>
+
+  <Tab title="String Manipulation">
+    Change text case and format:
+    
+    ```bash
+    # Case conversions
+    sttr upper "hello world"
+    # HELLO WORLD
+    
+    sttr lower "HELLO WORLD"
+    # hello world
+    
+    sttr title "hello world"
+    # Hello World
+    
+    # Format conversions
+    sttr camel "hello world example"
+    # helloWorldExample
+    
+    sttr pascal "hello world example"
+    # HelloWorldExample
+    
+    sttr snake "Hello World Example"
+    # hello_world_example
+    
+    sttr kebab "Hello World Example"
+    # hello-world-example
+    
+    sttr slug "Hello World! @#$"
+    # hello-world
+    
+    # Text manipulation
+    sttr reverse "Hello"
+    # olleH
+    ```
+  </Tab>
+
+  <Tab title="Counting & Analysis">
+    Analyze text properties:
+    
+    ```bash
+    # Count characters
+    sttr count-chars "Hello World"
+    # 11
+    
+    # Count words
+    sttr count-words "Hello World Example"
+    # 3
+    
+    # Count lines
+    sttr count-lines "line1\nline2\nline3"
+    # 3
+    ```
+  </Tab>
+</Tabs>
+
+## Working with Flags
+
+Many processors support flags for customization. Flags are defined in each processor's `Flags()` method (see `processors/processor.go:342-359` for the `zeropad` example).
+
+<CodeGroup>
+```bash Zero Padding
+# Default (5 zeros)
+sttr zeropad "42"
+# 0000042
+
+# Custom number of zeros
+sttr zeropad -n 10 "42"
+# 000000000042
+
+# With prefix
+sttr zeropad -p "ID-" -n 6 "42"
+# ID-00000042
+```
+
+```bash Base64 Variants
+# Standard base64 (padded)
+sttr base64-encode "Hello"
+# SGVsbG8=
+
+# Raw/unpadded base64
+sttr base64-encode -r "Hello"
+# SGVsbG8
+```
+
+```bash JSON Formatting
+# Minified JSON
+sttr json '{"name":"John","age":30}'
+# {"name":"John","age":30}
+
+# Pretty-printed JSON
+sttr json -i '{"name":"John","age":30}'
+# {
+#   "name": "John",
+#   "age": 30
+# }
+```
+
+```bash CRC32 Polynomials
+# IEEE polynomial (default)
+sttr crc32 "Hello"
+# f7d18982
+
+# Castagnoli polynomial
+sttr crc32 -p castagnoli "Hello"
+# c374371a
+
+# Koopman polynomial
+sttr crc32 -p koopman "Hello"
+# 8f1e6a49
+```
+</CodeGroup>
+
+<Tip>
+Use `sttr <processor> -h` to see all available flags for a specific processor:
+
+```bash
+sttr zeropad -h
+sttr base64-encode -h
+sttr json -h
+```
+</Tip>
+
+## Quoting and Special Characters
+
+<Note>
+Always quote your input when it contains spaces, special characters, or shell metacharacters.
+</Note>
+
+<CodeGroup>
+```bash Spaces
+# ❌ Wrong - interpreted as multiple arguments
+sttr md5 Hello World
+
+# ✅ Correct - quoted as single argument
+sttr md5 "Hello World"
+```
+
+```bash Special Characters
+# Quote to preserve special characters
+sttr url-encode "hello & goodbye"
+# hello+%26+goodbye
+
+sttr base64-encode "user@example.com"
+# dXNlckBleGFtcGxlLmNvbQ==
+```
+
+```bash Single vs Double Quotes
+# Double quotes allow variable expansion
+NAME="World"
+sttr md5 "Hello $NAME"
+# b10a8db164e0754105b7a99be72e3fe5
+
+# Single quotes treat everything literally
+sttr md5 'Hello $NAME'
+# 3c898f4c925d3f4d0bc5aa294db5ac0a
+```
+
+```bash Multiline Strings
+# Use $'...' for newlines
+sttr count-lines $'line1\nline2\nline3'
+# 3
+
+# Or use echo piping (see piping docs)
+echo -e "line1\nline2\nline3" | sttr count-lines
+# 3
+```
+</CodeGroup>
+
+## Processor Aliases
+
+Many processors have shorter alias names (defined in the `Alias()` method). For example, from `cmd/processor_md5.go:21`:
+
+```bash
+# These are equivalent
+sttr md5 "Hello"
+sttr md5-sum "Hello"
+
+# Base64 aliases
+sttr base64-encode "Hello"
+sttr b64-enc "Hello"
+sttr b64-encode "Hello"
+
+# JSON aliases
+sttr json-yaml '{"key":"value"}'
+sttr json-yml '{"key":"value"}'
+```
+
+<Tip>
+Run `sttr -h` to see all processors and their aliases.
+</Tip>
+
+## Output Redirection
+
+Direct input pairs well with shell output redirection:
+
+```bash
+# Save to file
+sttr base64-encode "Hello World" > encoded.txt
+
+# Append to file
+sttr md5 "password" >> hashes.txt
+
+# Use in command substitution
+HASH=$(sttr sha256 "mydata")
+echo "The hash is: $HASH"
+
+# Chain with other commands
+sttr json-yaml '{"a":1}' | grep "a:"
+```
+
+## Performance Considerations
+
+<Note>
+Direct input loads the entire string into memory at once. This is efficient for small to medium-sized strings but not suitable for:
+
+- Very long strings (>10MB)
+- Processing large datasets
+- File contents
+
+For these cases, use [file input](/usage/file-input) or [piping](/usage/piping) instead.
+</Note>
+
+## Shell Integration Examples
+
+<CodeGroup>
+```bash Quick Hash Checks
+#!/bin/bash
+expected="b10a8db164e0754105b7a99be72e3fe5"
+actual=$(sttr md5 "Hello World")
+
+if [ "$expected" = "$actual" ]; then
+  echo "Hash matches!"
+fi
+```
+
+```bash API Token Generation
+#!/bin/bash
+# Generate a token from timestamp + secret
+TIMESTAMP=$(date +%s)
+SECRET="my-api-secret"
+TOKEN=$(sttr sha256 "${TIMESTAMP}:${SECRET}")
+
+echo "Token: $TOKEN"
+echo "Timestamp: $TIMESTAMP"
+```
+
+```bash URL Parameter Building
+#!/bin/bash
+PARAM=$(sttr url-encode "value with spaces & symbols")
+curl "https://api.example.com/search?q=$PARAM"
+```
+
+```bash Variable Naming
+#!/bin/bash
+# Convert user input to valid variable names
+USER_INPUT="My Variable Name"
+VAR_NAME=$(sttr snake "$USER_INPUT")
+
+echo "Variable name: $VAR_NAME"
+# Output: my_variable_name
+```
+</CodeGroup>
+
+## Best Practices
+
+<Steps>
+  <Step title="Always quote your input">
+    Prevents shell interpretation of special characters:
+    ```bash
+    sttr md5 "$USER_INPUT"  # Safe
+    sttr md5 $USER_INPUT    # Dangerous
+    ```
+  </Step>
+
+  <Step title="Use aliases for brevity">
+    ```bash
+    sttr b64-enc "data"  # Shorter than base64-encode
+    ```
+  </Step>
+
+  <Step title="Check help for flags">
+    ```bash
+    sttr <processor> -h
+    ```
+  </Step>
+
+  <Step title="Validate processor exists">
+    ```bash
+    if sttr unknown "test" 2>/dev/null; then
+      echo "Processor exists"
+    else
+      echo "Unknown processor"
+    fi
+    ```
+  </Step>
+</Steps>
+
+## When to Use Direct Input
+
+**Best for:**
+- Quick one-off transformations
+- Small strings (under 1000 characters)
+- Shell scripting with variables
+- Interactive command-line work
+- Testing processors quickly
+
+**Not ideal for:**
+- Large text blocks
+- File contents
+- Multiline data (use piping or file input)
+- Repeated operations on same data

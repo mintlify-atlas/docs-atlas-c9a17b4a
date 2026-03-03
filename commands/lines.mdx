@@ -1,0 +1,422 @@
+---
+title: Line Operations
+description: Count, sort, reverse, shuffle, number, and manipulate lines in text
+---
+
+Perform various operations on lines of text including counting, sorting, reversing, and more.
+
+## Available Operations
+
+<CardGroup cols={2}>
+  <Card title="count-lines" icon="calculator">
+    Count number of lines in text
+  </Card>
+  
+  <Card title="sort-lines" icon="arrow-down-a-z">
+    Sort lines alphabetically
+  </Card>
+  
+  <Card title="reverse-lines" icon="arrow-down-up-across-line">
+    Reverse the order of lines
+  </Card>
+  
+  <Card title="shuffle-lines" icon="shuffle">
+    Randomly shuffle lines
+  </Card>
+  
+  <Card title="unique-lines" icon="filter">
+    Remove duplicate lines
+  </Card>
+  
+  <Card title="number-lines" icon="list-ol">
+    Add line numbers to text
+  </Card>
+</CardGroup>
+
+---
+
+## Count Lines
+
+<Card title="count-lines" icon="calculator">
+  Count the number of lines in text
+</Card>
+
+### Usage
+
+```bash
+# Count lines in text
+echo -e "line 1\nline 2\nline 3" | sttr count-lines
+# Output: 3
+
+# Count lines in a file
+cat file.txt | sttr count-lines
+
+# Count lines in command output
+ls -l | sttr count-lines
+
+# Empty input
+echo "" | sttr count-lines
+# Output: 0
+
+# Single line without newline
+echo -n "single line" | sttr count-lines
+# Output: 1
+```
+
+**Use cases:**
+- Count records in CSV files
+- Count log entries
+- Verify data processing
+- Quick file statistics
+
+---
+
+## Sort Lines
+
+<Card title="sort-lines" icon="arrow-down-a-z">
+  Sort lines alphabetically
+</Card>
+
+### Usage
+
+```bash
+# Sort lines alphabetically
+echo -e "zebra\napple\nbanana" | sttr sort-lines
+# Output:
+# apple
+# banana
+# zebra
+
+# Sort numbers (lexicographic sort)
+echo -e "10\n2\n100\n1" | sttr sort-lines
+# Output:
+# 1
+# 10
+# 100
+# 2
+
+# Sort file contents
+cat unsorted.txt | sttr sort-lines
+
+# Sort command output
+ls | sttr sort-lines
+```
+
+**Note:** This performs lexicographic (alphabetical) sorting, not natural/numeric sorting. For example, "10" comes before "2".
+
+**Use cases:**
+- Organize lists
+- Sort configuration entries
+- Alphabetize names
+- Order file listings
+
+---
+
+## Reverse Lines
+
+<Card title="reverse-lines" icon="arrow-down-up-across-line">
+  Reverse the order of lines
+</Card>
+
+### Usage
+
+```bash
+# Reverse line order
+echo -e "first\nsecond\nthird" | sttr reverse-lines
+# Output:
+# third
+# second
+# first
+
+# Reverse log file (newest first)
+cat app.log | sttr reverse-lines
+
+# Reverse numbered list
+echo -e "1. Step one\n2. Step two\n3. Step three" | sttr reverse-lines
+# Output:
+# 3. Step three
+# 2. Step two
+# 1. Step one
+```
+
+**Use cases:**
+- View logs in reverse chronological order
+- Reverse ordered lists
+- Process data bottom-up
+- Flip content order
+
+---
+
+## Shuffle Lines
+
+<Card title="shuffle-lines" icon="shuffle">
+  Randomly shuffle the order of lines
+</Card>
+
+### Usage
+
+```bash
+# Randomly shuffle lines
+echo -e "apple\nbanana\ncherry\ndate" | sttr shuffle-lines
+# Output: (random order each time)
+# cherry
+# apple
+# date
+# banana
+
+# Shuffle quiz questions
+cat questions.txt | sttr shuffle-lines
+
+# Randomize playlist
+cat playlist.m3u | sttr shuffle-lines
+
+# Pick random item (shuffle and take first)
+cat items.txt | sttr shuffle-lines | head -n 1
+```
+
+**Use cases:**
+- Randomize test questions
+- Shuffle playlists
+- Random sampling
+- A/B testing variants
+- Card deck simulation
+
+---
+
+## Unique Lines
+
+<Card title="unique-lines" icon="filter">
+  Remove duplicate lines while preserving order
+</Card>
+
+### Usage
+
+```bash
+# Remove duplicates
+echo -e "apple\nbanana\napple\ncherry\nbanana" | sttr unique-lines
+# Output:
+# apple
+# banana
+# cherry
+
+# Deduplicate log entries
+cat access.log | sttr unique-lines
+
+# Get unique IP addresses
+cat server.log | grep -oE '[0-9.]+' | sttr unique-lines
+
+# Remove duplicate emails
+cat subscribers.txt | sttr unique-lines
+```
+
+**Note:** Preserves the first occurrence of each unique line and maintains original order.
+
+**Use cases:**
+- Remove duplicate entries
+- Deduplicate lists
+- Find unique values
+- Clean data sets
+
+---
+
+## Number Lines
+
+<Card title="number-lines" icon="list-ol">
+  Add line numbers to each line
+</Card>
+
+### Usage
+
+```bash
+# Add line numbers
+echo -e "apple\nbanana\ncherry" | sttr number-lines
+# Output:
+# 1. apple
+# 2. banana
+# 3. cherry
+
+# Number code lines
+cat script.sh | sttr number-lines
+# Output:
+#  1. #!/bin/bash
+#  2. echo "Hello"
+#  3. exit 0
+
+# Auto-adjusts padding for alignment
+seq 1 100 | xargs -I {} echo "Line {}" | sttr number-lines
+# Output:
+#   1. Line 1
+#   2. Line 2
+#   ...
+#  10. Line 10
+#  ...
+# 100. Line 100
+```
+
+**Aliases:** `nl`, `line-numbers`, `line-number`, `number-line`, `numberlines`, `numberline`
+
+**Features:**
+- Automatically calculates padding for alignment
+- Skips empty lines (doesn't number them)
+- Adds period and space after number
+
+**Use cases:**
+- Code reviews
+- Line references
+- Numbered lists
+- Documentation
+- Error reporting with line numbers
+
+---
+
+## Combining Operations
+
+### Sort and Number
+
+```bash
+# Sort then add line numbers
+cat names.txt | sttr sort-lines | sttr number-lines
+# Output:
+# 1. Alice
+# 2. Bob
+# 3. Charlie
+```
+
+### Unique and Count
+
+```bash
+# Count unique lines
+cat data.txt | sttr unique-lines | sttr count-lines
+# Output: 42
+```
+
+### Shuffle and Take First
+
+```bash
+# Pick 3 random items
+cat items.txt | sttr shuffle-lines | head -n 3
+```
+
+### Reverse and Number
+
+```bash
+# Number in reverse order
+cat log.txt | sttr reverse-lines | sttr number-lines
+```
+
+---
+
+## Practical Examples
+
+### Data Analysis
+
+```bash
+# Find top 10 unique IP addresses
+cat access.log | grep -oE '[0-9.]+\.[0-9]+' | \
+  sttr unique-lines | sttr count-lines
+
+# Sort and count unique entries
+cat data.csv | cut -d',' -f1 | sttr unique-lines | sttr count-lines
+```
+
+### File Processing
+
+```bash
+# Number lines in source code for review
+cat app.js | sttr number-lines > app_numbered.txt
+
+# Sort configuration file
+cat config.conf | sttr sort-lines > config_sorted.conf
+
+# Remove duplicate log entries
+cat app.log | sttr unique-lines > app_dedup.log
+```
+
+### List Management
+
+```bash
+# Alphabetize and number a list
+cat todo.txt | sttr sort-lines | sttr number-lines
+
+# Randomize and pick items
+cat participants.txt | sttr shuffle-lines | head -n 5
+```
+
+### Log Analysis
+
+```bash
+# Count unique error messages
+grep ERROR app.log | sttr unique-lines | sttr count-lines
+
+# View most recent logs first
+cat application.log | sttr reverse-lines | head -n 20
+```
+
+### Text Processing Pipeline
+
+```bash
+# Complete text processing workflow
+cat raw_data.txt | \
+  sttr unique-lines | \
+  sttr sort-lines | \
+  sttr number-lines > processed.txt
+
+# Remove duplicates, shuffle, and take sample
+cat population.txt | \
+  sttr unique-lines | \
+  sttr shuffle-lines | \
+  head -n 100 > sample.txt
+```
+
+---
+
+## Comparison with Unix Tools
+
+| sttr Command | Unix Equivalent | Notes |
+|--------------|----------------|--------|
+| `count-lines` | `wc -l` | More explicit name |
+| `sort-lines` | `sort` | Simpler usage |
+| `reverse-lines` | `tac` | More memorable name |
+| `unique-lines` | `sort \| uniq` | Preserves order |
+| `number-lines` | `nl` | Auto-padding |
+| `shuffle-lines` | `sort -R` / `shuf` | Cryptographically random |
+
+**Advantages of sttr:**
+- Consistent naming convention
+- Preserves order for `unique-lines`
+- Automatic alignment for `number-lines`
+- No need to remember multiple tools
+
+---
+
+## Tips
+
+### Count Empty Lines
+
+```bash
+# Total lines minus non-empty lines
+TOTAL=$(cat file.txt | sttr count-lines)
+NON_EMPTY=$(cat file.txt | grep -v '^$' | sttr count-lines)
+echo "Empty lines: $((TOTAL - NON_EMPTY))"
+```
+
+### Sort Case-Insensitive
+
+```bash
+# Convert to lowercase, sort, then restore
+cat names.txt | sttr lower | sttr sort-lines
+```
+
+### Stable Shuffle
+
+```bash
+# Save shuffled order for reproducibility
+cat items.txt | sttr shuffle-lines | tee shuffled.txt
+```
+
+### Number Only Non-Empty Lines
+
+```bash
+# This is the default behavior of number-lines
+cat file.txt | sttr number-lines
+```

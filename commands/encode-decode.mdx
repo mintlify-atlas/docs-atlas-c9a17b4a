@@ -1,0 +1,421 @@
+---
+title: Encoding & Decoding Commands
+description: Encode and decode text using various formats including Base64, Base32, Hex, URL, HTML, and more
+---
+
+sttr supports a wide range of encoding and decoding formats for text transformation.
+
+## Base64 Encoding
+
+<CardGroup cols={2}>
+  <Card title="base64-encode" icon="arrow-up-right-from-square">
+    Encode text to Base64 format
+  </Card>
+  <Card title="base64-decode" icon="arrow-down-left-to-square">
+    Decode Base64 text to plain text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to Base64
+echo "hello world" | sttr base64-encode
+# Output: aGVsbG8gd29ybGQ=
+
+# Decode from Base64
+echo "aGVsbG8gd29ybGQ=" | sttr base64-decode
+# Output: hello world
+
+# Raw (unpadded) encoding
+echo "hello" | sttr base64-encode -r
+# Output: aGVsbG8
+```
+
+**Aliases:** `b64-enc`, `b64-encode`, `b64-dec`, `b64-decode`
+
+**Flags:**
+- `-r, --raw` - Use unpadded Base64 encoding
+
+---
+
+## Base64URL Encoding
+
+<CardGroup cols={2}>
+  <Card title="base64url-encode" icon="link">
+    Encode text to URL-safe Base64
+  </Card>
+  <Card title="base64url-decode" icon="link-slash">
+    Decode URL-safe Base64 text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# URL-safe Base64 encoding (uses - and _ instead of + and /)
+echo "hello world?" | sttr base64url-encode
+# Output: aGVsbG8gd29ybGQ_
+
+echo "aGVsbG8gd29ybGQ_" | sttr base64url-decode
+# Output: hello world?
+```
+
+**Aliases:** `b64url-enc`, `b64url-encode`, `b64url-dec`, `b64url-decode`
+
+**Flags:**
+- `-r, --raw` - Use unpadded Base64URL encoding
+
+---
+
+## Base32 Encoding
+
+<CardGroup cols={2}>
+  <Card title="base32-encode" icon="hashtag">
+    Encode text to Base32 format
+  </Card>
+  <Card title="base32-decode" icon="hashtag">
+    Decode Base32 text to plain text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to Base32
+echo "hello" | sttr base32-encode
+# Output: NBSWY3DP
+
+# Decode from Base32
+echo "NBSWY3DP" | sttr base32-decode
+# Output: hello
+```
+
+**Aliases:** `b32-enc`, `b32-encode`, `b32-dec`, `b32-decode`
+
+---
+
+## Base58 Encoding
+
+<CardGroup cols={2}>
+  <Card title="base58-encode" icon="bitcoin-sign">
+    Encode text to Base58 (Bitcoin-style)
+  </Card>
+  <Card title="base58-decode" icon="bitcoin-sign">
+    Decode Base58 text to plain text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to Base58
+echo "hello" | sttr base58-encode
+# Output: Cn8eVZg
+
+# Encode with checksum (Base58Check)
+echo "hello" | sttr base58-encode -c
+
+# Decode from Base58
+echo "Cn8eVZg" | sttr base58-decode
+# Output: hello
+```
+
+**Aliases:** `b58-enc`, `b58-encode`, `b58-dec`, `b58-decode`
+
+**Flags:**
+- `-c, --check` - Use Base58Check encoding/decoding with checksum verification
+
+---
+
+## Base62 Encoding
+
+<CardGroup cols={2}>
+  <Card title="base62-encode" icon="0">
+    Encode text to Base62 format
+  </Card>
+  <Card title="base62-decode" icon="0">
+    Decode Base62 text to plain text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to Base62
+echo "hello" | sttr base62-encode
+# Output: 5TErdwXC
+
+# Encode with prefix
+echo "hello" | sttr base62-encode -p "id"
+# Output: id_5TErdwXC
+
+# Decode from Base62
+echo "5TErdwXC" | sttr base62-decode
+# Output: hello
+```
+
+**Aliases:** `b62-enc`, `b62-encode`, `b62-dec`, `b62-decode`
+
+**Flags:**
+- `-p, --prefix` - Add prefix to encoded string
+
+---
+
+## Crockford Base32
+
+<CardGroup cols={2}>
+  <Card title="crockford-base32-encode" icon="c">
+    Encode using Crockford Base32 alphabet
+  </Card>
+  <Card title="crockford-base32-decode" icon="c">
+    Decode Crockford Base32 text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to Crockford Base32
+echo "hello" | sttr crockford-base32-encode
+
+# Encode with checksum
+echo "hello" | sttr crockford-base32-encode -c
+
+# Decode and verify checksum
+echo "encoded" | sttr crockford-base32-decode -v
+```
+
+**Aliases:** `crockford-b32-enc`, `cb32-encode`, `crockford-b32-dec`, `cb32-decode`
+
+**Flags:**
+- `-c, --checksum` - Add Crockford checksum (encode)
+- `-v, --verify` - Verify Crockford checksum (decode)
+
+---
+
+## ASCII85 Encoding
+
+<CardGroup cols={2}>
+  <Card title="ascii85-encode" icon="a">
+    Encode text to ASCII85/Base85
+  </Card>
+  <Card title="ascii85-decode" icon="a">
+    Decode ASCII85/Base85 text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to ASCII85
+echo "hello" | sttr ascii85-encode
+# Output: BOu!rDZ
+
+# Decode from ASCII85
+echo "BOu!rDZ" | sttr ascii85-decode
+# Output: hello
+```
+
+**Aliases:** `ascii85-encoding`, `base85-encode`, `b85-encode`, `ascii85-decoding`, `base85-decode`, `b85-decode`
+
+---
+
+## Hexadecimal Encoding
+
+<CardGroup cols={2}>
+  <Card title="hex-encode" icon="hashtag">
+    Encode text to hexadecimal
+  </Card>
+  <Card title="hex-decode" icon="hashtag">
+    Decode hexadecimal to text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to hex
+echo "hello" | sttr hex-encode
+# Output: 68656c6c6f
+
+# Decode from hex
+echo "68656c6c6f" | sttr hex-decode
+# Output: hello
+```
+
+**Aliases:** `hex-enc`, `hexadecimal-encode`, `hex-dec`, `hexadecimal-decode`
+
+---
+
+## URL Encoding
+
+<CardGroup cols={2}>
+  <Card title="url-encode" icon="link">
+    Encode URL entities
+  </Card>
+  <Card title="url-decode" icon="link-slash">
+    Decode URL entities
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# URL encode
+echo "hello world" | sttr url-encode
+# Output: hello+world
+
+echo "name=John Doe&age=30" | sttr url-encode
+# Output: name%3DJohn+Doe%26age%3D30
+
+# URL decode
+echo "hello+world" | sttr url-decode
+# Output: hello world
+```
+
+**Aliases:** `url-enc`, `url-dec`
+
+---
+
+## HTML Encoding
+
+<CardGroup cols={2}>
+  <Card title="html-encode" icon="code">
+    Escape HTML entities
+  </Card>
+  <Card title="html-decode" icon="code">
+    Unescape HTML entities
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# HTML encode
+echo "<div>Hello & goodbye</div>" | sttr html-encode
+# Output: &lt;div&gt;Hello &amp; goodbye&lt;/div&gt;
+
+# HTML decode
+echo "&lt;div&gt;Hello&lt;/div&gt;" | sttr html-decode
+# Output: <div>Hello</div>
+```
+
+**Aliases:** `html-enc`, `html-escape`, `html-dec`, `html-unescape`
+
+---
+
+## Morse Code
+
+<CardGroup cols={2}>
+  <Card title="morse-encode" icon="signal">
+    Encode text to Morse code
+  </Card>
+  <Card title="morse-decode" icon="signal">
+    Decode Morse code to text
+  </Card>
+</CardGroup>
+
+### Usage
+
+```bash
+# Encode to Morse code
+echo "SOS" | sttr morse-encode
+# Output: ... --- ...
+
+echo "HELLO" | sttr morse-encode
+# Output: .... . .-.. .-.. ---
+
+# Decode from Morse code (default: Latin)
+echo "... --- ..." | sttr morse-decode
+# Output: SOS
+
+# Decode with specific language
+echo "... --- ..." | sttr morse-decode -l ru
+# Output: (Cyrillic equivalent)
+```
+
+**Aliases:** `morse-enc`, `morse-code-encode`, `morse-code-enc`, `morse-dec`, `morse-code-decode`, `morse-code-dec`
+
+**Flags:**
+- `-l, --lang` - Morse code language set (la, ru, gr, he, ar, ja, kr, th)
+  - `la` - Latin (default)
+  - `ru` - Cyrillic
+  - `gr` - Greek
+  - `he` - Hebrew
+  - `ar` - Arabic
+  - `ja` - Japanese
+  - `kr` - Korean
+  - `th` - Thai
+
+**Note:** Morse code uses space to separate letters and `/` to separate words.
+
+---
+
+## ROT13
+
+<Card title="rot13" icon="rotate">
+  Apply ROT13 cipher (both encode and decode)
+</Card>
+
+### Usage
+
+```bash
+# ROT13 encode (also decodes when applied twice)
+echo "hello" | sttr rot13
+# Output: uryyb
+
+# ROT13 decode (same command)
+echo "uryyb" | sttr rot13
+# Output: hello
+
+# Preserve case
+echo "Hello World" | sttr rot13
+# Output: Uryyb Jbeyq
+```
+
+**Aliases:** `rot13-encode`, `rot13-enc`
+
+**Note:** ROT13 is symmetric - applying it twice returns the original text. It only affects letters (A-Z, a-z) and preserves numbers, punctuation, and case.
+
+---
+
+## Use Cases
+
+### API Development
+```bash
+# Encode credentials for Basic Auth
+echo -n "username:password" | sttr base64-encode
+# Output: dXNlcm5hbWU6cGFzc3dvcmQ=
+```
+
+### Web Development
+```bash
+# URL-encode query parameters
+echo "search query" | sttr url-encode
+# Output: search+query
+
+# Escape HTML in user input
+echo "<script>alert('xss')</script>" | sttr html-encode
+# Output: &lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;
+```
+
+### Data Processing
+```bash
+# Convert binary data to hex for inspection
+cat binary.dat | sttr hex-encode | head -c 100
+
+# Decode Base64-encoded configuration
+cat config.b64 | sttr base64-decode
+```
+
+### Fun & Education
+```bash
+# Send secret messages
+echo "meet at midnight" | sttr morse-encode
+# Output: -- . . - / .- - / -- .. -.. -. .. --. .... -
+
+# Simple text obfuscation
+echo "secret" | sttr rot13
+# Output: frperg
+```

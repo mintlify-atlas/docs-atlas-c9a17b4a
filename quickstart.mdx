@@ -1,80 +1,503 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with sttr in minutes - from basic usage to advanced transformations
 ---
 
-## Get started in three steps
+This guide will walk you through the essential features of sttr, from basic transformations to advanced usage patterns.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Make sure you have sttr installed. If not, follow the [installation guide](/installation).
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+Verify your installation:
+
+```bash
+sttr version
+```
+
+## Basic Usage
+
+There are three main ways to use sttr:
+
+### 1. Interactive Mode
+
+<Steps>
+  <Step title="Launch sttr">
+    Run `sttr` without any arguments to enter interactive mode:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    sttr
+    ```
+  </Step>
+  
+  <Step title="Enter your text">
+    Type or paste the text you want to transform. You can enter multiple lines.
+  </Step>
+  
+  <Step title="Open the operations menu">
+    Press **Enter** twice to open the operations menu.
+  </Step>
+  
+  <Step title="Select an operation">
+    - Press `/` to filter operations by name
+    - Use arrow keys (↑/↓) to navigate
+    - Press **Enter** to apply the selected transformation
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    The result will be displayed, and you can copy it to your clipboard.
+  </Step>
+</Steps>
 
-### Step 2: Deploy your changes
+<Tip>
+Interactive mode is perfect for exploring available transformations and trying different operations on the same input.
+</Tip>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+### 2. Direct Input
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+Pass text directly as an argument for quick transformations:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+```bash
+sttr <command> "<input>"
+```
 
-### Step 3: Go live
+**Examples:**
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<CodeGroup>
+```bash Base64 Encoding
+sttr base64-encode "Hello World"
+# SGVsbG8gV29ybGQ=
+```
 
-## Next steps
+```bash MD5 Hash
+sttr md5 "Hello World"
+# b10a8db164e0754105b7a99be72e3fe5
+```
 
-Now that you have your docs running, explore these key features:
+```bash Convert to snake_case
+sttr snake "Hello World"
+# hello_world
+```
 
-<CardGroup cols={2}>
+```bash Convert to camelCase
+sttr camel "user profile name"
+# userProfileName
+```
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+```bash URL Encoding
+sttr url-encode "hello world & foo=bar"
+# hello+world+%26+foo%3Dbar
+```
+</CodeGroup>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+### 3. Piping Input
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+Use sttr with pipes to process output from other commands:
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+```bash
+command | sttr <operation>
+```
 
-</CardGroup>
+**Examples:**
+
+<CodeGroup>
+```bash From echo
+echo "Hello World" | sttr base64-encode
+# SGVsbG8gV29ybGQ=
+```
+
+```bash From curl
+curl -s https://jsonplaceholder.typicode.com/users | sttr json-yaml
+# Converts JSON API response to YAML
+```
+
+```bash From cat
+cat README.md | sttr markdown-html > README.html
+# Converts Markdown to HTML
+```
+
+```bash Chain transformations
+echo "Hello World" | sttr base64-encode | sttr md5
+# a6c2e0b76b0e6c7eaae1d5e4f5e0c1d2
+```
+</CodeGroup>
+
+## Working with Files
+
+sttr can read from files directly:
+
+```bash
+sttr <command> <filename>
+```
+
+**Examples:**
+
+<CodeGroup>
+```bash Hash a file
+sttr md5 document.pdf
+sttr sha256 archive.zip
+```
+
+```bash Encode files
+sttr base64-encode image.jpg
+sttr hex-encode binary.dat
+```
+
+```bash Convert file formats
+sttr yaml-json config.yaml
+sttr json-yaml package.json
+sttr markdown-html README.md
+```
+</CodeGroup>
+
+### Write Output to Files
+
+Use output redirection to save results:
+
+```bash
+sttr yaml-json input.yaml > output.json
+sttr markdown-html README.md > README.html
+sttr base64-encode image.png > image.b64
+```
+
+## Common Operations
+
+### Encoding & Decoding
+
+<CodeGroup>
+```bash Base64
+# Encode
+sttr base64-encode "secret data"
+
+# Decode
+sttr base64-decode "c2VjcmV0IGRhdGE="
+```
+
+```bash URL
+# Encode
+sttr url-encode "hello world"
+
+# Decode
+sttr url-decode "hello%20world"
+```
+
+```bash HTML
+# Encode
+sttr html-encode "<div>Hello</div>"
+
+# Decode
+sttr html-decode "&lt;div&gt;Hello&lt;/div&gt;"
+```
+
+```bash Hex
+# Encode text to hex
+sttr hex-encode "Hello"
+# 48656c6c6f
+
+# Decode hex to text
+sttr hex-decode "48656c6c6f"
+# Hello
+```
+</CodeGroup>
+
+### Hashing
+
+<CodeGroup>
+```bash MD5
+sttr md5 "Hello World"
+# b10a8db164e0754105b7a99be72e3fe5
+```
+
+```bash SHA-256
+sttr sha256 "Hello World"
+# a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e
+```
+
+```bash SHA-512
+sttr sha512 "Hello World"
+# 2c74fd17edafd80e8447b0d46741ee243b7eb74dd2149a0ab1b9246fb30382f27e853d8585719e0e67cbda0daa8f51671064615d645ae27acb15bfb1447f459b
+```
+
+```bash bcrypt
+sttr bcrypt "password123"
+# $2a$10$...
+```
+</CodeGroup>
+
+### String Case Conversion
+
+<CodeGroup>
+```bash camelCase
+sttr camel "user profile name"
+# userProfileName
+```
+
+```bash PascalCase
+sttr pascal "user profile name"
+# UserProfileName
+```
+
+```bash snake_case
+sttr snake "user profile name"
+# user_profile_name
+```
+
+```bash kebab-case
+sttr kebab "user profile name"
+# user-profile-name
+```
+
+```bash UPPER CASE
+sttr upper "hello world"
+# HELLO WORLD
+```
+
+```bash lower case
+sttr lower "HELLO WORLD"
+# hello world
+```
+</CodeGroup>
+
+### Format Conversion
+
+<CodeGroup>
+```bash JSON to YAML
+echo '{"name":"John","age":30}' | sttr json-yaml
+# age: 30
+# name: John
+```
+
+```bash YAML to JSON
+sttr yaml-json config.yaml
+```
+
+```bash Markdown to HTML
+sttr markdown-html README.md
+```
+
+```bash Format JSON
+echo '{"name":"John","age":30}' | sttr json
+# {
+#   "name": "John",
+#   "age": 30
+# }
+```
+</CodeGroup>
+
+### Text Extraction
+
+<CodeGroup>
+```bash Extract Emails
+sttr extract-emails contacts.txt
+```
+
+```bash Extract URLs
+cat webpage.html | sttr extract-urls
+```
+
+```bash Extract IPs
+cat server.log | sttr extract-ip
+```
+</CodeGroup>
+
+### Line Operations
+
+<CodeGroup>
+```bash Sort Lines
+sttr sort-lines unsorted.txt
+```
+
+```bash Unique Lines
+sttr unique-lines duplicates.txt
+```
+
+```bash Reverse Lines
+sttr reverse-lines file.txt
+```
+
+```bash Shuffle Lines
+sttr shuffle-lines list.txt
+```
+
+```bash Count Lines
+sttr count-lines document.txt
+```
+
+```bash Number Lines
+sttr number-lines file.txt
+# 1 First line
+# 2 Second line
+# 3 Third line
+```
+</CodeGroup>
+
+## Advanced Usage
+
+### Using Flags
+
+Some operations support flags for additional options. Use `-h` to see available flags:
+
+```bash
+sttr <command> -h
+```
+
+**Examples:**
+
+<CodeGroup>
+```bash Zeropad
+# Pad number with 5 zeros (default)
+sttr zeropad "42"
+# 0000042
+
+# Pad with 10 zeros
+sttr zeropad -n 10 "42"
+# 000000000042
+
+# Add prefix
+sttr zeropad -n 5 -p "ID-" "42"
+# ID-0000042
+```
+
+```bash Base64 Raw (unpadded)
+sttr base64-encode -r "Hello"
+# SGVsbG8
+```
+
+```bash Escape Quotes
+# Escape both single and double quotes (default)
+sttr escape-quotes 'He said "Hello"'
+
+# Escape only double quotes
+sttr escape-quotes -d 'He said "Hello"'
+
+# Escape only single quotes
+sttr escape-quotes -s "It's working"
+```
+</CodeGroup>
+
+### Chaining Operations
+
+Combine multiple transformations using pipes:
+
+```bash
+# Hash after encoding
+echo "sensitive data" | sttr base64-encode | sttr sha256
+
+# Convert case then encode
+echo "User Name" | sttr snake | sttr base64-encode
+
+# Multiple conversions
+cat config.yaml | sttr yaml-json | sttr json
+```
+
+### Processing Large Files
+
+sttr efficiently handles large files using streaming:
+
+```bash
+# Hash large files without loading into memory
+sttr sha256 large-file.iso
+
+# Convert large JSON files
+sttr json-yaml huge-data.json > huge-data.yaml
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+sttr uses a streaming architecture that processes data in chunks, making it memory-efficient even with large files.
 </Note>
+
+## Getting Help
+
+### List All Commands
+
+View all available operations:
+
+```bash
+sttr -h
+```
+
+### Command-Specific Help
+
+Get details about a specific command:
+
+```bash
+sttr <command> -h
+
+# Examples:
+sttr base64-encode -h
+sttr zeropad -h
+sttr md5 -h
+```
+
+### Command Aliases
+
+Many commands have aliases for convenience:
+
+```bash
+# These are equivalent:
+sttr base64-encode "hello"
+sttr b64-enc "hello"
+sttr b64-encode "hello"
+```
+
+## Real-World Examples
+
+<AccordionGroup>
+  <Accordion title="Generate API Request Signature">
+    ```bash
+    # Create HMAC signature for API authentication
+    echo -n "timestamp=1234567890&user=john" | sttr sha256
+    ```
+  </Accordion>
+  
+  <Accordion title="Convert Environment Files">
+    ```bash
+    # Convert .env file to JSON
+    cat .env | sttr yaml-json > config.json
+    ```
+  </Accordion>
+  
+  <Accordion title="Extract Emails from Multiple Files">
+    ```bash
+    # Find all emails in a directory
+    cat *.txt | sttr extract-emails | sttr unique-lines
+    ```
+  </Accordion>
+  
+  <Accordion title="Format JSON API Response">
+    ```bash
+    # Pretty print API response
+    curl -s https://api.github.com/users/abhimanyu003 | sttr json
+    ```
+  </Accordion>
+  
+  <Accordion title="Generate Code Variables">
+    ```bash
+    # Convert user input to various naming conventions
+    echo "user profile image" | sttr camel    # userProfileImage
+    echo "user profile image" | sttr pascal   # UserProfileImage
+    echo "user profile image" | sttr snake    # user_profile_image
+    echo "user profile image" | sttr kebab    # user-profile-image
+    ```
+  </Accordion>
+  
+  <Accordion title="Process Log Files">
+    ```bash
+    # Extract and sort unique IP addresses from logs
+    cat access.log | sttr extract-ip | sttr sort-lines | sttr unique-lines
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CLI Reference" icon="book" href="https://abhimanyu003.github.io/sttr/cli/sttr/">
+    Browse complete command reference
+  </Card>
+  <Card title="Source Code" icon="github" href="https://github.com/abhimanyu003/sttr">
+    Explore the source code on GitHub
+  </Card>
+</CardGroup>
+
+<Tip>
+Bookmark the interactive mode (`sttr`) for quick access to all transformations when you need to explore options.
+</Tip>

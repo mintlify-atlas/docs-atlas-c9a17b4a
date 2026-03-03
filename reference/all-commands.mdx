@@ -1,0 +1,380 @@
+---
+title: All Commands
+description: Complete alphabetical reference of all sttr processors
+---
+
+This page provides a comprehensive reference of all 86 text transformation commands available in sttr.
+
+## Encoding & Decoding
+
+### ASCII85
+
+| Command | Description | Example |
+|---------|-------------|-------|
+| `ascii85-encode` | Encode text to ASCII85 format | `hello` → `BOu!rDZ` |
+| `ascii85-decode` | Decode ASCII85 to plain text | `BOu!rDZ` → `hello` |
+
+### Base32
+
+| Command | Description | Aliases |
+|---------|-------------|----------|
+| `base32-encode` | Encode text to Base32 | `b32-enc`, `b32-encode` |
+| `base32-decode` | Decode Base32 to plain text | `b32-dec`, `b32-decode` |
+| `crockford-base32-encode` | Encode using Crockford Base32 | - |
+| `crockford-base32-decode` | Decode Crockford Base32 | - |
+
+### Base58
+
+| Command | Description | Aliases |
+|---------|-------------|----------|
+| `base58-encode` | Encode text to Base58 | `b58-enc`, `b58-encode` |
+| `base58-decode` | Decode Base58 to plain text | `b58-dec`, `b58-decode` |
+
+### Base62
+
+| Command | Description | Aliases |
+|---------|-------------|----------|
+| `base62-encode` | Encode text to Base62 | `b62-enc`, `b62-encode` |
+| `base62-decode` | Decode Base62 to plain text | `b62-dec`, `b62-decode` |
+
+### Base64
+
+| Command | Description | Aliases | Flags |
+|---------|-------------|---------|-------|
+| `base64-encode` | Encode text to Base64 | `b64-enc`, `b64-encode` | `-r, --raw` (unpadded) |
+| `base64-decode` | Decode Base64 to plain text | `b64-dec`, `b64-decode` | `-r, --raw` (unpadded) |
+| `base64url-encode` | Encode text to Base64 URL-safe format | - | - |
+| `base64url-decode` | Decode Base64 URL-safe format | - | - |
+
+**Example with flags:**
+```bash
+echo "hello" | sttr base64-encode
+# aGVsbG8K
+
+echo "hello" | sttr base64-encode --raw
+# aGVsbG8K (unpadded)
+```
+
+### Hexadecimal
+
+| Command | Description | Aliases |
+|---------|-------------|----------|
+| `hex-encode` | Encode text to hexadecimal | `hex-enc`, `hexadecimal-encode` |
+| `hex-decode` | Decode hexadecimal to text | `hex-dec`, `hexadecimal-decode` |
+| `hex-rgb` | Convert hex color code to RGB | - |
+
+**Example:**
+```bash
+echo "hello" | sttr hex-encode
+# 68656c6c6f
+
+echo "#FF5733" | sttr hex-rgb
+# rgb(255, 87, 51)
+```
+
+### HTML
+
+| Command | Description |
+|---------|-------------|
+| `html-encode` | Encode special HTML characters | 
+| `html-decode` | Decode HTML entities |
+
+### URL
+
+| Command | Description |
+|---------|-------------|
+| `url-encode` | URL encode text |
+| `url-decode` | URL decode text |
+
+## Hashing & Cryptography
+
+### Hash Functions
+
+| Command | Description | Aliases | Output Length |
+|---------|-------------|---------|---------------|
+| `md5` | Generate MD5 hash | `md5-sum` | 128-bit (32 hex chars) |
+| `sha1` | Generate SHA-1 hash | `sha1-sum` | 160-bit (40 hex chars) |
+| `sha224` | Generate SHA-224 hash | `sha224-sum` | 224-bit (56 hex chars) |
+| `sha256` | Generate SHA-256 hash | `sha256-sum` | 256-bit (64 hex chars) |
+| `sha384` | Generate SHA-384 hash | `sha384-sum` | 384-bit (96 hex chars) |
+| `sha512` | Generate SHA-512 hash | `sha512-sum` | 512-bit (128 hex chars) |
+
+**Example:**
+```bash
+echo "password" | sttr sha256
+# 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
+```
+
+### BLAKE2
+
+| Command | Description |
+|---------|-------------|
+| `blake2b` | Generate BLAKE2b hash |
+| `blake2s` | Generate BLAKE2s hash |
+
+### Checksums
+
+| Command | Description |
+|---------|-------------|
+| `adler32` | Calculate Adler-32 checksum |
+| `crc32` | Calculate CRC-32 checksum |
+| `xxh32` | Calculate xxHash 32-bit |
+| `xxh64` | Calculate xxHash 64-bit |
+| `xxh128` | Calculate xxHash 128-bit |
+
+### Password Hashing
+
+| Command | Description | Flags |
+|---------|-------------|-------|
+| `bcrypt` | Generate bcrypt hash | `-r, --number-of-rounds` (default: 10) |
+
+**Example:**
+```bash
+echo "mypassword" | sttr bcrypt
+# $2a$10$...
+
+echo "mypassword" | sttr bcrypt --number-of-rounds 12
+# $2a$12$...
+```
+
+## Text Case Conversion
+
+| Command | Description | Example |
+|---------|-------------|-------|
+| `lower` | Convert to lowercase | `HELLO` → `hello` |
+| `upper` | Convert to UPPERCASE | `hello` → `HELLO` |
+| `title` | Convert to Title Case | `hello world` → `Hello World` |
+| `camel` | Convert to camelCase | `hello world` → `helloWorld` |
+| `pascal` | Convert to PascalCase | `hello world` → `HelloWorld` |
+| `snake` | Convert to snake_case | `hello world` → `hello_world` |
+| `kebab` | Convert to kebab-case | `hello world` → `hello-world` |
+| `slug` | Convert to URL-friendly slug | `Hello World!` → `hello-world` |
+
+**Example:**
+```bash
+echo "user profile settings" | sttr camel
+# userProfileSettings
+
+echo "user profile settings" | sttr snake
+# user_profile_settings
+```
+
+## Line Operations
+
+### Line Manipulation
+
+| Command | Description | Aliases |
+|---------|-------------|----------|
+| `count-lines` | Count number of lines | - |
+| `number-lines` | Prepend line numbers | `nl`, `line-numbers`, `numberlines` |
+| `reverse-lines` | Reverse the order of lines | - |
+| `shuffle-lines` | Randomly shuffle lines | - |
+| `sort-lines` | Sort lines alphabetically | - |
+| `unique-lines` | Remove duplicate lines | - |
+
+**Example:**
+```bash
+cat file.txt | sttr number-lines
+# 1. First line
+# 2. Second line
+# 3. Third line
+
+cat file.txt | sttr unique-lines
+# Returns only unique lines in original order
+```
+
+## Text Analysis & Counting
+
+| Command | Description | Example |
+|---------|-------------|-------|
+| `count-chars` | Count characters (including spaces) | `hello` → `5` |
+| `count-words` | Count words | `hello world` → `2` |
+| `count-lines` | Count lines | See above |
+
+## Text Manipulation
+
+### Basic Operations
+
+| Command | Description | Example |
+|---------|-------------|-------|
+| `reverse` | Reverse the entire text | `hello` → `olleh` |
+| `remove-newlines` | Remove all newline characters | - |
+| `remove-spaces` | Remove all spaces | `hello world` → `helloworld` |
+
+### Quote Handling
+
+| Command | Description | Aliases | Flags |
+|---------|-------------|---------|-------|
+| `escape-quotes` | Escape quotes in text | `esc-quotes` | `-d` (double), `-s` (single) |
+
+**Example:**
+```bash
+echo 'He said "hello"' | sttr escape-quotes
+# He said \"hello\"
+
+echo 'He said "hello"' | sttr escape-quotes --double-quote
+# He said \"hello\"
+```
+
+## Pattern Extraction
+
+| Command | Description |
+|---------|-------------|
+| `extract-emails` | Extract email addresses from text |
+| `extract-urls` | Extract URLs from text |
+| `extract-ips` | Extract IP addresses from text |
+
+**Example:**
+```bash
+echo "Contact us at info@example.com or support@test.org" | sttr extract-emails
+# info@example.com
+# support@test.org
+```
+
+## Format Conversion
+
+### JSON
+
+| Command | Description | Aliases | Flags |
+|---------|-------------|---------|-------|
+| `json` | Format/prettify JSON | - | `-i, --indent` (prettyprint) |
+| `json-escape` | Escape JSON string | `json-esc` | - |
+| `json-unescape` | Unescape JSON string | `json-unesc` | `-i, --indent` |
+| `json-yaml` | Convert JSON to YAML | `json-yml` | - |
+| `json-msgpack` | Convert JSON to MessagePack | - | - |
+
+**Example:**
+```bash
+echo '{"name":"John","age":30}' | sttr json --indent
+# {
+#   "name": "John",
+#   "age": 30
+# }
+```
+
+### YAML
+
+| Command | Description | Aliases | Flags |
+|---------|-------------|---------|-------|
+| `yaml-json` | Convert YAML to JSON | `yml-json` | `-i, --indent` |
+
+### MessagePack
+
+| Command | Description |
+|---------|-------------|
+| `msgpack-json` | Convert MessagePack to JSON |
+
+### Markdown
+
+| Command | Description |
+|---------|-------------|
+| `markdown` | Convert Markdown to HTML |
+
+## Encoding Systems
+
+### Morse Code
+
+| Command | Description |
+|---------|-------------|
+| `morse-encode` | Encode text to Morse code |
+| `morse-decode` | Decode Morse code to text |
+
+**Example:**
+```bash
+echo "SOS" | sttr morse-encode
+# ... --- ...
+```
+
+### ROT13
+
+| Command | Description |
+|---------|-------------|
+| `rot13` | Apply ROT13 cipher (encode/decode) |
+
+**Example:**
+```bash
+echo "hello" | sttr rot13
+# uryyb
+
+echo "uryyb" | sttr rot13
+# hello
+```
+
+## Special Utilities
+
+### QR Code
+
+| Command | Description |
+|---------|-------------|
+| `qr` | Generate QR code from text |
+
+### Zero Padding
+
+| Command | Description | Flags |
+|---------|-------------|-------|
+| `zeropad` | Pad numbers with zeros | `-n, --number-of-zeros` (default: 5)<br/>`-p, --prefix` (prefix string) |
+
+**Example:**
+```bash
+echo "42" | sttr zeropad
+# 0000042
+
+echo "42" | sttr zeropad -n 3
+# 00042
+
+echo "42" | sttr zeropad -n 3 -p "ID_"
+# ID_00042
+
+echo "-42" | sttr zeropad -n 3
+# -00042
+```
+
+## Command Categories Summary
+
+<AccordionGroup>
+  <Accordion title="Encoding (18 commands)">
+    ASCII85, Base32, Base58, Base62, Base64, Base64URL, Hex, HTML, URL encoding and decoding
+  </Accordion>
+  
+  <Accordion title="Hashing (14 commands)">
+    MD5, SHA family, BLAKE2, Adler32, CRC32, xxHash, bcrypt
+  </Accordion>
+  
+  <Accordion title="Case Conversion (8 commands)">
+    lower, upper, title, camel, pascal, snake, kebab, slug
+  </Accordion>
+  
+  <Accordion title="Line Operations (6 commands)">
+    count, number, reverse, shuffle, sort, unique lines
+  </Accordion>
+  
+  <Accordion title="Text Analysis (3 commands)">
+    count-chars, count-words, count-lines
+  </Accordion>
+  
+  <Accordion title="Format Conversion (9 commands)">
+    JSON, YAML, MessagePack, Markdown conversions
+  </Accordion>
+  
+  <Accordion title="Pattern Extraction (3 commands)">
+    extract-emails, extract-urls, extract-ips
+  </Accordion>
+  
+  <Accordion title="Other Utilities (10 commands)">
+    reverse, remove operations, escape-quotes, morse code, ROT13, QR code, zeropad
+  </Accordion>
+</AccordionGroup>
+
+## Finding Commands
+
+You can find commands in several ways:
+
+1. **Interactive mode**: Run `sttr` without arguments to browse all processors
+2. **List all**: Use `sttr --help` to see all available commands
+3. **Search by alias**: Many commands have convenient aliases (e.g., `b64-enc` for `base64-encode`)
+
+## See Also
+
+- [Flags Reference](/reference/flags) - Learn about command flags and options
+- [Streaming](/reference/streaming) - Understand how sttr processes large files
+- [Quick Start](/quickstart) - Get started with common use cases

@@ -1,0 +1,432 @@
+---
+title: String Case Transformations
+description: Convert text between different case formats including camelCase, PascalCase, snake_case, kebab-case, and more
+---
+
+Transform text between various case formats commonly used in programming and writing.
+
+## Available Case Formats
+
+<CardGroup cols={2}>
+  <Card title="camel" icon="c">
+    camelCase - first word lowercase, rest capitalized
+  </Card>
+  
+  <Card title="pascal" icon="p">
+    PascalCase - all words capitalized
+  </Card>
+  
+  <Card title="snake" icon="s">
+    snake_case - lowercase with underscores
+  </Card>
+  
+  <Card title="kebab" icon="k">
+    kebab-case - lowercase with hyphens
+  </Card>
+  
+  <Card title="slug" icon="link">
+    slug-case - URL-friendly lowercase
+  </Card>
+  
+  <Card title="upper" icon="arrow-up">
+    UPPERCASE - all characters uppercase
+  </Card>
+  
+  <Card title="lower" icon="arrow-down">
+    lowercase - all characters lowercase
+  </Card>
+  
+  <Card title="title" icon="heading">
+    Title Case - capitalize first letter of each word
+  </Card>
+</CardGroup>
+
+---
+
+## camelCase
+
+<Card title="camel" icon="code">
+  Convert to camelCase (thisIsCamelCase)
+</Card>
+
+### Usage
+
+```bash
+# Convert to camelCase
+echo "hello world" | sttr camel
+# Output: helloWorld
+
+echo "user first name" | sttr camel
+# Output: userFirstName
+
+echo "get-user-by-id" | sttr camel
+# Output: getUserById
+
+# Convert from snake_case
+echo "first_name_value" | sttr camel
+# Output: firstNameValue
+```
+
+**Use cases:**
+- JavaScript/TypeScript variables and functions
+- Java methods and variables
+- JSON property names (common convention)
+
+---
+
+## PascalCase
+
+<Card title="pascal" icon="code">
+  Convert to PascalCase (ThisIsPascalCase)
+</Card>
+
+### Usage
+
+```bash
+# Convert to PascalCase
+echo "hello world" | sttr pascal
+# Output: HelloWorld
+
+echo "user service class" | sttr pascal
+# Output: UserServiceClass
+
+echo "http-request-handler" | sttr pascal
+# Output: HttpRequestHandler
+
+# From snake_case
+echo "user_model" | sttr pascal
+# Output: UserModel
+```
+
+**Use cases:**
+- Class names in Java, C#, Swift
+- Component names in React/Vue
+- Type names in TypeScript
+- Constructor functions
+
+---
+
+## snake_case
+
+<Card title="snake" icon="code">
+  Convert to snake_case (this_is_snake_case)
+</Card>
+
+### Usage
+
+```bash
+# Convert to snake_case
+echo "hello world" | sttr snake
+# Output: hello_world
+
+echo "getUserById" | sttr snake
+# Output: get_user_by_id
+
+echo "HTTPResponseCode" | sttr snake
+# Output: http_response_code
+
+# Multiple spaces normalized
+echo "first    name    value" | sttr snake
+# Output: first_name_value
+```
+
+**Use cases:**
+- Python variables and functions
+- Ruby variables and methods
+- Database column names
+- Configuration file keys
+- Rust variables
+
+---
+
+## kebab-case
+
+<Card title="kebab" icon="code">
+  Convert to kebab-case (this-is-kebab-case)
+</Card>
+
+### Usage
+
+```bash
+# Convert to kebab-case
+echo "hello world" | sttr kebab
+# Output: hello-world
+
+echo "getUserData" | sttr kebab
+# Output: get-user-data
+
+echo "User Profile Page" | sttr kebab
+# Output: user-profile-page
+
+echo "user_first_name" | sttr kebab
+# Output: user-first-name
+```
+
+**Use cases:**
+- HTML/CSS class names
+- HTML tag attributes
+- URL slugs
+- File names
+- CLI flags and commands
+- Vue/Angular component selectors
+
+---
+
+## slug-case
+
+<Card title="slug" icon="link">
+  Convert to URL-friendly slug (this-is-a-slug)
+</Card>
+
+### Usage
+
+```bash
+# Convert to URL slug
+echo "Hello World!" | sttr slug
+# Output: hello-world
+
+echo "10 Best Practices for 2024" | sttr slug
+# Output: 10-best-practices-for-2024
+
+# Removes special characters
+echo "How to: Setup & Configure!" | sttr slug
+# Output: how-to-setup-configure
+
+echo "Über cool café" | sttr slug
+# Output: ber-cool-caf
+```
+
+**Use cases:**
+- Blog post URLs
+- Page slugs
+- SEO-friendly URLs
+- File naming
+
+**Note:** Similar to kebab-case but removes all non-alphanumeric characters except hyphens.
+
+---
+
+## UPPERCASE
+
+<Card title="upper" icon="arrow-up">
+  Convert to UPPERCASE
+</Card>
+
+### Usage
+
+```bash
+# Convert to uppercase
+echo "hello world" | sttr upper
+# Output: HELLO WORLD
+
+echo "Hello World" | sttr upper
+# Output: HELLO WORLD
+
+# Preserve special characters
+echo "hello-world_123" | sttr upper
+# Output: HELLO-WORLD_123
+```
+
+**Use cases:**
+- Environment variable names
+- Constants in code
+- SQL keywords (convention)
+- Acronyms
+- Emphasis in text
+
+---
+
+## lowercase
+
+<Card title="lower" icon="arrow-down">
+  Convert to lowercase
+</Card>
+
+### Usage
+
+```bash
+# Convert to lowercase
+echo "HELLO WORLD" | sttr lower
+# Output: hello world
+
+echo "Hello World" | sttr lower
+# Output: hello world
+
+# Preserve special characters
+echo "HELLO-WORLD_123" | sttr lower
+# Output: hello-world_123
+```
+
+**Use cases:**
+- Email addresses (normalization)
+- Hashtags
+- Domain names
+- Case-insensitive comparisons
+- Text normalization
+
+---
+
+## Title Case
+
+<Card title="title" icon="heading">
+  Convert to Title Case (First Letter Of Each Word)
+</Card>
+
+### Usage
+
+```bash
+# Convert to Title Case
+echo "hello world" | sttr title
+# Output: Hello World
+
+echo "the quick brown fox" | sttr title
+# Output: The Quick Brown Fox
+
+echo "welcome to the app" | sttr title
+# Output: Welcome To The App
+```
+
+**Use cases:**
+- Article titles
+- Headings
+- Names and proper nouns
+- UI labels
+- Document titles
+
+---
+
+## Conversion Examples
+
+### From One Format to Another
+
+```bash
+# camelCase → snake_case
+echo "getUserById" | sttr snake
+# Output: get_user_by_id
+
+# snake_case → camelCase
+echo "user_first_name" | sttr camel
+# Output: userFirstName
+
+# kebab-case → PascalCase
+echo "user-profile-component" | sttr pascal
+# Output: UserProfileComponent
+
+# PascalCase → kebab-case
+echo "UserProfileComponent" | sttr kebab
+# Output: user-profile-component
+
+# Any format → UPPERCASE
+echo "getUserById" | sttr upper
+# Output: GETUSERBYID
+```
+
+---
+
+## Practical Use Cases
+
+### Code Refactoring
+
+```bash
+# Convert function names from camelCase to snake_case
+echo "getUserData" | sttr snake
+echo "setUserProfile" | sttr snake
+echo "deleteUserAccount" | sttr snake
+```
+
+### API Development
+
+```bash
+# Convert field names for different languages
+echo "first_name" | sttr camel  # JavaScript
+# Output: firstName
+
+echo "firstName" | sttr snake   # Python/SQL
+# Output: first_name
+```
+
+### URL Generation
+
+```bash
+# Create URL slugs from titles
+echo "10 Tips for Better Code" | sttr slug
+# Output: 10-tips-for-better-code
+
+echo "User Profile - Settings & Privacy" | sttr slug
+# Output: user-profile-settings-privacy
+```
+
+### Database Schema
+
+```bash
+# Convert model names to table names
+echo "UserProfile" | sttr snake
+# Output: user_profile
+
+echo "OrderItem" | sttr snake
+# Output: order_item
+```
+
+### CSS Class Names
+
+```bash
+# Create BEM-style class names
+echo "User Profile Card" | sttr kebab
+# Output: user-profile-card
+
+echo "navigation menu item" | sttr kebab
+# Output: navigation-menu-item
+```
+
+### Environment Variables
+
+```bash
+# Convert to environment variable format
+echo "database url" | sttr upper | tr ' ' '_'
+# Output: DATABASE_URL
+
+echo "api secret key" | sttr upper | tr ' ' '_'
+# Output: API_SECRET_KEY
+```
+
+---
+
+## Batch Processing
+
+```bash
+# Convert multiple strings
+cat fields.txt | while read line; do
+  echo "$line -> $(echo "$line" | sttr camel)"
+done
+
+# Example fields.txt:
+# user name
+# email address
+# phone number
+
+# Output:
+# user name -> userName
+# email address -> emailAddress
+# phone number -> phoneNumber
+```
+
+---
+
+## Naming Convention Guide
+
+| Language/Context | Convention | Command |
+|-----------------|------------|----------|
+| JavaScript variables | camelCase | `sttr camel` |
+| JavaScript classes | PascalCase | `sttr pascal` |
+| Python variables | snake_case | `sttr snake` |
+| Python classes | PascalCase | `sttr pascal` |
+| Ruby variables/methods | snake_case | `sttr snake` |
+| Java methods | camelCase | `sttr camel` |
+| Java classes | PascalCase | `sttr pascal` |
+| C# methods | PascalCase | `sttr pascal` |
+| SQL columns | snake_case | `sttr snake` |
+| CSS classes | kebab-case | `sttr kebab` |
+| HTML attributes | kebab-case | `sttr kebab` |
+| URLs | kebab-case/slug | `sttr slug` |
+| Constants | UPPER_CASE | `sttr upper` |
+| File names | kebab-case | `sttr kebab` |

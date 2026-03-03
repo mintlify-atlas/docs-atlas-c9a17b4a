@@ -1,0 +1,265 @@
+---
+title: Interactive Mode
+description: Use sttr's interactive TUI to explore and apply transformations
+icon: 'terminal'
+---
+
+## Overview
+
+Interactive mode is sttr's default interface when you run the command without arguments. It launches a Terminal User Interface (TUI) powered by [Bubble Tea](https://github.com/charmbracelet/bubbletea), allowing you to input text, search through processors, and see results instantly.
+
+<Note>
+Interactive mode is perfect when you're exploring sttr's capabilities or aren't sure which transformation to use.
+</Note>
+
+## Starting Interactive Mode
+
+<Steps>
+  <Step title="Launch sttr">
+    Simply run `sttr` without any arguments:
+    
+    ```bash
+    sttr
+    ```
+  </Step>
+
+  <Step title="Enter your text">
+    The interface prompts you to input text. Type or paste your content, then **press Enter twice** (two empty lines) to proceed:
+    
+    ```
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │Provide string to transform • [ Enter 2 empty lines to process ]     │
+    └─────────────────────────────────────────────────────────────────────┘
+    ```
+  </Step>
+
+  <Step title="Select a transformation">
+    Browse the list of available processors using arrow keys. Press `/` to filter operations:
+    
+    ```
+    Select transformation
+    
+    > MD5 Checksum (md5)
+      SHA1 Checksum (sha1)
+      Base64 Encode (base64-encode)
+      To Upper case (upper)
+      To Lower case (lower)
+    ```
+  </Step>
+
+  <Step title="View the result">
+    Press Enter to apply the transformation and see the output:
+    
+    ```
+    ─────────────────────────────────────────────────────────────────────
+    5eb63bbbe01eeed093cb22bb8f5acdc3
+    ```
+  </Step>
+</Steps>
+
+## How It Works
+
+The interactive UI is implemented in `ui/ui.go` and provides these key features:
+
+### Input Collection
+
+The `ReadMultilineInput()` function (from `utils/text.go:14-33`) reads your input line by line:
+
+```go
+func ReadMultilineInput() string {
+    str := make([]string, 0)
+    scanner := bufio.NewScanner(os.Stdin)
+    empty := 0
+    for {
+        scanner.Scan()
+        text := scanner.Text()
+        str = append(str, text)
+        if len(text) != 0 {
+            empty = 0
+        } else {
+            empty++
+            if empty == 2 {
+                break
+            }
+        }
+    }
+    return strings.Join(str[:len(str)-2], "\n")
+}
+```
+
+This waits for two consecutive empty lines before processing.
+
+### Processor Selection
+
+The UI presents all available processors from `processors.List` (defined in `processors/processor.go:15-87`):
+
+```go
+var List = []list.Item{
+    Adler32{},
+    ASCII85Decoding{},
+    ASCII85Encoding{},
+    Base32Decode{},
+    Base64Encode{},
+    MD5{},
+    SHA256{},
+    // ... 80+ processors
+}
+```
+
+### Real-time Filtering
+
+The TUI supports instant search filtering. Press `/` and type to narrow down options:
+
+```
+Select transformation
+Filter: hash
+
+> MD5 Checksum (md5)
+  SHA1 Checksum (sha1)
+  SHA256 Checksum (sha256)
+  SHA512 Checksum (sha512)
+```
+
+## Navigation Keys
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Navigate through processors |
+| `/` | Start filtering/searching |
+| `Enter` | Select and apply transformation |
+| `q` / `Ctrl+C` | Quit without applying |
+| `Esc` | Clear filter (when filtering) |
+
+## Use Cases
+
+<Tabs>
+  <Tab title="Exploring Transformations">
+    When you need to see what transformations are available:
+    
+    ```bash
+    $ sttr
+    # Input: Hello World
+    # Filter by typing: case
+    # See options: camel, pascal, snake, kebab, upper, lower, title
+    ```
+  </Tab>
+
+  <Tab title="Quick Testing">
+    Test how different processors handle your data:
+    
+    ```bash
+    $ sttr
+    # Input: hello-world-example
+    # Try: camel → helloWorldExample
+    # Restart, try: pascal → HelloWorldExample
+    # Restart, try: snake → hello_world_example
+    ```
+  </Tab>
+
+  <Tab title="Learning Commands">
+    Interactive mode shows the command name in parentheses:
+    
+    ```
+    To Camel case (camel)
+    ```
+    
+    Now you know to use `sttr camel "hello world"` directly next time.
+  </Tab>
+</Tabs>
+
+## Multiline Input Examples
+
+<CodeGroup>
+```bash Formatting JSON
+$ sttr
+# Input (press Enter twice after):
+{"name":"John","age":30,"city":"New York"}
+
+
+# Select: Format JSON (json)
+# Output:
+{
+  "name": "John",
+  "age": 30,
+  "city": "New York"
+}
+```
+
+```bash Processing Lists
+$ sttr
+# Input:
+apple
+banana
+apple
+orange
+banana
+apple
+
+
+# Select: Unique Lines (unique-lines)
+# Output:
+apple
+banana
+orange
+```
+
+```bash Extracting Data
+$ sttr
+# Input:
+Contact us at support@example.com or
+sales@company.org for more information.
+You can also reach admin@site.net
+
+
+# Select: Extract Emails (extract-emails)
+# Output:
+support@example.com
+sales@company.org
+admin@site.net
+```
+</CodeGroup>
+
+## Tips and Best Practices
+
+<Tip>
+**Processor Discovery**: Not sure what processor to use? Press `/` and type keywords like "encode", "hash", "case", or "json" to filter relevant options.
+</Tip>
+
+<Tip>
+**Clipboard Workflow**: Paste text directly into the terminal (Ctrl+Shift+V on Linux, Cmd+V on macOS), press Enter twice, then select your transformation.
+</Tip>
+
+<Tip>
+**Command Learning**: After using interactive mode, note the processor name shown in parentheses. Use it with direct input next time for faster workflows.
+</Tip>
+
+<Warning>
+Interactive mode is not suitable for automation or scripting. Use direct input or piping for scripts and CI/CD pipelines.
+</Warning>
+
+## When to Use Interactive Mode
+
+**Best for:**
+- Exploring available transformations
+- One-off text processing tasks
+- Learning processor names and capabilities
+- Testing transformations before scripting them
+- Working with clipboard content
+
+**Not ideal for:**
+- Automated scripts or CI/CD pipelines
+- Processing multiple files
+- Chaining multiple transformations
+- Large file processing (use [file input](/usage/file-input) instead)
+
+## Technical Implementation
+
+The interactive UI is built using the Bubble Tea framework. The core logic in `ui/ui.go:38-81` handles:
+
+1. **Rendering the input prompt** with styled borders using [Lipgloss](https://github.com/charmbracelet/lipgloss)
+2. **Creating a list model** from all registered processors
+3. **Running the TUI event loop** to capture user selections
+4. **Executing the transformation** via the processor's `Transform()` method
+5. **Displaying formatted output** with visual separators
+
+The maximum display width is set to 72 characters (`ui/ui.go:19`) for optimal terminal readability across different screen sizes.

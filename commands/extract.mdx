@@ -1,0 +1,463 @@
+---
+title: Extract Commands
+description: Extract emails, IP addresses, and URLs from text
+---
+
+Extract structured data patterns from unstructured text.
+
+## Available Extractors
+
+<CardGroup cols={3}>
+  <Card title="extract-emails" icon="envelope">
+    Extract email addresses
+  </Card>
+  
+  <Card title="extract-ip" icon="network-wired">
+    Extract IP addresses (IPv4 & IPv6)
+  </Card>
+  
+  <Card title="extract-url" icon="link">
+    Extract URLs
+  </Card>
+</CardGroup>
+
+---
+
+## Extract Emails
+
+<Card title="extract-emails" icon="envelope">
+  Extract all valid email addresses from text
+</Card>
+
+### Usage
+
+```bash
+# Extract emails from text
+echo "Contact: john@example.com or support@company.org" | sttr extract-emails
+# Output:
+# john@example.com
+# support@company.org
+
+# Extract from file
+cat document.txt | sttr extract-emails
+
+# Extract with custom separator
+echo "Emails: john@example.com, jane@example.com" | sttr extract-emails -s ", "
+# Output: john@example.com, jane@example.com
+
+# Extract from HTML
+cat email.html | sttr extract-emails
+
+# Extract from logs
+grep -i contact logs/*.log | sttr extract-emails | sort | uniq
+```
+
+**Aliases:** `find-emails`, `find-email`, `extract-email`
+
+**Flags:**
+- `-s, --separator` - Separator for multiple emails (default: newline)
+
+**Features:**
+- Validates against ICANN suffix list
+- Handles international domains
+- Filters invalid/malformed emails
+- One email per line by default
+
+**Use cases:**
+- Scrape contact information
+- Build email lists
+- Extract recipients from logs
+- Parse email headers
+- Data mining
+
+---
+
+## Extract IP Addresses
+
+<Card title="extract-ip" icon="network-wired">
+  Extract IPv4 and IPv6 addresses from text
+</Card>
+
+### Usage
+
+```bash
+# Extract IPv4 addresses
+echo "Server: 192.168.1.1, Gateway: 10.0.0.1" | sttr extract-ip
+# Output:
+# 192.168.1.1
+# 10.0.0.1
+
+# Extract from logs
+cat access.log | sttr extract-ip
+# Output:
+# 203.0.113.45
+# 198.51.100.67
+# 192.0.2.123
+
+# Extract IPv6 addresses
+echo "IPv6: 2001:0db8::1" | sttr extract-ip
+# Output: 2001:db8::1
+
+# Extract from network config
+cat /etc/network/interfaces | sttr extract-ip
+
+# Get unique IPs
+cat server.log | sttr extract-ip | sort | uniq
+
+# Count unique visitors
+cat access.log | sttr extract-ip | sort | uniq | wc -l
+```
+
+**Aliases:** `find-ips`, `find-ip`, `extract-ips`
+
+**Features:**
+- Extracts both IPv4 and IPv6
+- Validates IP address format
+- Normalizes IPv6 (removes extra zeros)
+- Handles mixed content
+- One IP per line
+
+**Use cases:**
+- Parse log files
+- Extract network information
+- Security analysis
+- Network monitoring
+- Firewall rule generation
+
+### Examples by Type
+
+#### IPv4 Extraction
+
+```bash
+# Standard IPv4
+echo "Connect to 192.168.1.100" | sttr extract-ip
+# Output: 192.168.1.100
+
+# Multiple IPs
+echo "From 10.0.0.1 to 10.0.0.254" | sttr extract-ip
+# Output:
+# 10.0.0.1
+# 10.0.0.254
+```
+
+#### IPv6 Extraction
+
+```bash
+# Full IPv6
+echo "2001:0db8:0000:0000:0000:0000:0000:0001" | sttr extract-ip
+# Output: 2001:db8::1 (normalized)
+
+# Compressed IPv6
+echo "fe80::1" | sttr extract-ip
+# Output: fe80::1
+```
+
+---
+
+## Extract URLs
+
+<Card title="extract-url" icon="link">
+  Extract all URLs from text
+</Card>
+
+### Usage
+
+```bash
+# Extract URLs from text
+echo "Visit https://example.com or http://test.org" | sttr extract-url
+# Output:
+# https://example.com
+# http://test.org
+
+# Extract from HTML
+cat webpage.html | sttr extract-url
+
+# Extract from markdown
+cat README.md | sttr extract-url
+
+# Extract URLs without protocol
+echo "Check example.com and test.org" | sttr extract-url
+# Output:
+# example.com
+# test.org
+
+# Extract with paths and parameters
+echo "API: https://api.example.com/v1/users?id=123" | sttr extract-url
+# Output: https://api.example.com/v1/users?id=123
+
+# Get unique URLs
+cat pages/*.html | sttr extract-url | sort | uniq
+```
+
+**Aliases:** `url-ext`, `extract-urls`, `ext-url`
+
+**Features:**
+- Extracts both absolute and relative URLs
+- Handles URLs with and without protocol
+- Supports query parameters
+- Supports URL fragments (#anchors)
+- Relaxed matching for common URL patterns
+- One URL per line
+
+**Use cases:**
+- Web scraping
+- Link validation
+- SEO analysis
+- Sitemap generation
+- Dead link detection
+
+### URL Types Supported
+
+```bash
+# HTTP/HTTPS
+echo "https://example.com/path" | sttr extract-url
+# Output: https://example.com/path
+
+# No protocol
+echo "example.com" | sttr extract-url
+# Output: example.com
+
+# With port
+echo "http://localhost:8080" | sttr extract-url
+# Output: http://localhost:8080
+
+# With query string
+echo "https://example.com?foo=bar&baz=qux" | sttr extract-url
+# Output: https://example.com?foo=bar&baz=qux
+
+# With fragment
+echo "https://example.com/page#section" | sttr extract-url
+# Output: https://example.com/page#section
+```
+
+---
+
+## Practical Examples
+
+### Email Extraction
+
+#### Build Contact List
+
+```bash
+# Extract all emails from website
+curl -s https://example.com | sttr extract-emails | sort | uniq > contacts.txt
+
+# Extract from multiple files
+cat *.txt | sttr extract-emails | sort | uniq > all-emails.txt
+
+# Count unique emails
+cat newsletter.html | sttr extract-emails | sort | uniq | wc -l
+```
+
+#### Parse Email Headers
+
+```bash
+# Extract recipients from email
+cat email.eml | grep -E '^(To|Cc|Bcc):' | sttr extract-emails
+
+# Get sender addresses from mailbox
+grep '^From:' mbox | sttr extract-emails | sort | uniq
+```
+
+---
+
+### IP Address Extraction
+
+#### Log Analysis
+
+```bash
+# Find all IPs in access log
+cat access.log | sttr extract-ip | sort | uniq -c | sort -rn
+# Output:
+# 1523 192.168.1.100
+# 892 10.0.0.45
+# 234 203.0.113.67
+
+# Get top 10 visitors
+cat access.log | sttr extract-ip | sort | uniq -c | sort -rn | head -10
+
+# Extract IPs from specific date
+grep '2024-03-15' access.log | sttr extract-ip | sort | uniq
+```
+
+#### Security Analysis
+
+```bash
+# Find suspicious IPs (failed logins)
+grep 'Failed password' /var/log/auth.log | sttr extract-ip | sort | uniq -c
+
+# Block IPs with >10 failed attempts
+grep 'Failed password' /var/log/auth.log | \
+  sttr extract-ip | \
+  sort | uniq -c | \
+  awk '$1 > 10 {print $2}' | \
+  while read ip; do
+    echo "iptables -A INPUT -s $ip -j DROP"
+  done
+```
+
+#### Network Discovery
+
+```bash
+# Extract all IPs from network scan
+nmap -sn 192.168.1.0/24 | sttr extract-ip
+
+# Find all IPs in configuration
+cat /etc/hosts /etc/network/* | sttr extract-ip | sort | uniq
+```
+
+---
+
+### URL Extraction
+
+#### Web Scraping
+
+```bash
+# Extract all links from webpage
+curl -s https://example.com | sttr extract-url > links.txt
+
+# Get unique domains
+cat page.html | sttr extract-url | cut -d/ -f3 | sort | uniq
+
+# Find all PDF links
+cat website.html | sttr extract-url | grep '\.pdf$'
+```
+
+#### Link Validation
+
+```bash
+# Check all URLs in markdown file
+cat README.md | sttr extract-url | while read url; do
+  echo "Checking $url..."
+  curl -s -o /dev/null -w "%{http_code}" "$url"
+done
+
+# Find broken links
+cat *.html | sttr extract-url | sort | uniq | while read url; do
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+  [ "$STATUS" != "200" ] && echo "Broken: $url ($STATUS)"
+done
+```
+
+#### Sitemap Generation
+
+```bash
+# Extract all URLs from website
+curl -s https://example.com | sttr extract-url | \
+  grep '^https://example.com' | \
+  sort | uniq > sitemap.txt
+```
+
+---
+
+## Combining Extractors
+
+### Extract Multiple Patterns
+
+```bash
+# Extract emails and URLs from document
+cat document.txt | sttr extract-emails > emails.txt
+cat document.txt | sttr extract-url > urls.txt
+
+# Extract emails and IPs from logs
+cat app.log | sttr extract-emails > user-emails.txt
+cat app.log | sttr extract-ip > access-ips.txt
+```
+
+### Pipeline Processing
+
+```bash
+# Extract, filter, and process
+cat website.html | \
+  sttr extract-url | \
+  grep 'example.com' | \
+  sort | uniq | \
+  wc -l
+
+# Extract IPs and geolocate
+cat access.log | \
+  sttr extract-ip | \
+  sort | uniq | \
+  while read ip; do
+    echo "$ip: $(geoiplookup $ip)"
+  done
+```
+
+---
+
+## Advanced Use Cases
+
+### Data Mining
+
+```bash
+# Mine emails from GitHub repos
+find . -name '*.md' | xargs cat | sttr extract-emails | sort | uniq
+
+# Extract contact info from PDFs (requires pdftotext)
+find . -name '*.pdf' -exec pdftotext {} - \; | sttr extract-emails
+```
+
+### Security Auditing
+
+```bash
+# Find all external URLs in source code
+grep -r 'http' src/ | sttr extract-url | \
+  grep -v 'localhost' | \
+  grep -v '127.0.0.1' | \
+  sort | uniq
+
+# Identify hardcoded IPs in code
+grep -r . src/ | sttr extract-ip | sort | uniq
+```
+
+### Content Analysis
+
+```bash
+# Count external links
+cat blog-post.html | sttr extract-url | \
+  grep -v 'myblog.com' | \
+  wc -l
+
+# Find all referenced domains
+cat index.html | sttr extract-url | \
+  sed 's|https\?://||' | \
+  cut -d/ -f1 | \
+  sort | uniq
+```
+
+---
+
+## Tips & Tricks
+
+### Deduplication
+
+```bash
+# Extract unique emails
+cat *.txt | sttr extract-emails | sort | uniq
+
+# Case-insensitive unique emails
+cat *.txt | sttr extract-emails | tr '[:upper:]' '[:lower:]' | sort | uniq
+```
+
+### Filtering
+
+```bash
+# Extract emails from specific domain
+cat list.txt | sttr extract-emails | grep '@example.com$'
+
+# Extract private IPs only
+cat logs.txt | sttr extract-ip | grep -E '^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)'
+
+# Extract only HTTPS URLs
+cat page.html | sttr extract-url | grep '^https://'
+```
+
+### Formatting
+
+```bash
+# CSV format
+cat doc.txt | sttr extract-emails -s ','
+
+# Quoted list
+cat urls.txt | sttr extract-url | sed 's/^/"/' | sed 's/$/"/' | paste -sd,
+```

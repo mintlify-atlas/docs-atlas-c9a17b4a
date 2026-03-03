@@ -1,0 +1,356 @@
+---
+title: Flags Reference
+description: Understanding the flag system and processor options in sttr
+---
+
+Many sttr processors accept flags to customize their behavior. This page documents how flags work and provides examples from the codebase.
+
+## Flag System Overview
+
+Flags in sttr are defined using the `Flag` type from `processors/processor.go:140-154`. Each flag has the following properties:
+
+<ParamField path="Name" type="string" required>
+  The long version of the flag (lowercase with hyphens)
+  
+  Example: `"number-of-zeros"`, `"indent"`
+</ParamField>
+
+<ParamField path="Short" type="string" required>
+  Single character shorthand (lowercase)
+  
+  Example: `"n"`, `"i"`
+</ParamField>
+
+<ParamField path="Desc" type="string" required>
+  A short description of what the flag does
+  
+  Example: `"Number of zeros to be padded"`
+</ParamField>
+
+<ParamField path="Type" type="FlagType" required>
+  The data type of the flag value (see [Flag Types](#flag-types))
+</ParamField>
+
+<ParamField path="Value" type="any">
+  Optional default value for the flag
+  
+  Example: `5`, `true`, `""`
+</ParamField>
+
+## Flag Types
+
+The `FlagType` enum is defined in `processors/processor.go:123-138` and supports four types:
+
+| Type | Go Type | Usage |
+|------|---------|-------|
+| `FlagInt` | `int` | Signed integers |
+| `FlagUint` | `uint` | Unsigned integers (positive numbers) |
+| `FlagBool` | `bool` | Boolean flags (true/false) |
+| `FlagString` | `string` | Text values |
+
+## Example: Zeropad Processor
+
+The `zeropad` processor demonstrates how to implement flags. From `processors/processor.go:342-359`:
+
+```go
+func (p Zeropad) Flags() []Flag {
+	return []Flag{
+		{
+			Name:  "number-of-zeros",
+			Short: "n",
+			Desc:  "Number of zeros to be padded",
+			Value: 5,
+			Type:  FlagUint,
+		},
+		{
+			Name:  "prefix",
+			Short: "p",
+			Desc:  "The number get prefixed with this",
+			Value: "",
+			Type:  FlagString,
+		},
+	}
+}
+```
+
+### Using Zeropad Flags
+
+```bash
+# Use default (5 zeros)
+echo "42" | sttr zeropad
+# Output: 0000042
+
+# Specify number of zeros with long flag
+echo "42" | sttr zeropad --number-of-zeros 3
+# Output: 00042
+
+# Use short flag
+echo "42" | sttr zeropad -n 3
+# Output: 00042
+
+# Combine multiple flags
+echo "42" | sttr zeropad -n 8 -p "ID_"
+# Output: ID_0000000042
+
+# Works with negative numbers
+echo "-42" | sttr zeropad -n 3
+# Output: -00042
+```
+
+### Reading Flag Values in Transform
+
+From `processors/processor.go:312-339`, here's how `zeropad` reads its flags:
+
+```go
+func (p Zeropad) Transform(data []byte, f ...Flag) (string, error) {
+	// ... validation code ...
+	
+	var n int
+	pre := ""
+	for _, flag := range f {
+		if flag.Short == "n" {
+			x, ok := flag.Value.(uint)
+			if ok {
+				n = int(x)
+			}
+		} else if flag.Short == "p" {
+			x, ok := flag.Value.(string)
+			if ok {
+				pre = x
+			}
+		}
+	}
+	return fmt.Sprintf("%s%s%s%s", pre, neg, strings.Repeat("0", n), data), nil
+}
+```
+
+<Note>
+  Always use type assertions when reading flag values: `value.(uint)`, `value.(string)`, etc.
+</Note>
+
+## Example: Boolean Flags
+
+The `escape-quotes` processor uses boolean flags from `processors/strings.go:461-478`:
+
+```go
+func (p EscapeQuotes) Flags() []Flag {
+	return []Flag{
+		{
+			Name:  "double-quote",
+			Short: "d",
+			Desc:  "Escape double quote",
+			Value: true,
+			Type:  FlagBool,
+		},
+		{
+			Name:  "single-quote",
+			Short: "s",
+			Desc:  "Escape single quote",
+			Value: true,
+			Type:  FlagBool,
+		},
+	}
+}
+```
+
+### Usage:
+
+```bash
+# Escape both quotes (default)
+echo 'He said "hello"' | sttr escape-quotes
+# Output: He said \"hello\"
+
+# Escape only double quotes
+echo 'He said "hello"' | sttr escape-quotes --double-quote
+
+# Use short flags
+echo 'It\'s "great"' | sttr escape-quotes -d -s
+```
+
+## Example: JSON Formatting Flags
+
+The `json` processor uses an indent flag from `processors/json.go:66-70`:
+
+```go
+func (p FormatJSON) Flags() []Flag {
+	return []Flag{
+		{
+			Name: "indent", 
+			Short: "i", 
+			Desc: "Indent the output (prettyprint)", 
+			Type: FlagBool, 
+			Value: false,
+		},
+	}
+}
+```
+
+### Usage:
+
+```bash
+# Minified output (default)
+echo '{"name":"John"}' | sttr json
+# Output: {"name":"John"}
+
+# Pretty-printed output
+echo '{"name":"John"}' | sttr json --indent
+# Output:
+# {
+#   "name": "John"
+# }
+
+# Short flag
+echo '{"name":"John"}' | sttr json -i
+```
+
+## Example: Base64 Raw Encoding
+
+The `base64-encode` processor supports raw (unpadded) encoding from `processors/base64.go:8-49`:
+
+```go
+var base64RawFlag = Flag{
+	Name:  "raw",
+	Short: "r",
+	Desc:  "unpadded base64 encoding",
+	Value: false,
+	Type:  FlagBool,
+}
+
+func (p Base64Encode) Flags() []Flag {
+	return []Flag{base64RawFlag}
+}
+
+func (p Base64Encode) Transform(data []byte, f ...Flag) (string, error) {
+	if checkBase64RawFlag(f) {
+		return base64.RawStdEncoding.EncodeToString(data), nil
+	}
+	return base64.StdEncoding.EncodeToString(data), nil
+}
+```
+
+### Usage:
+
+```bash
+# Standard encoding with padding
+echo "hello" | sttr base64-encode
+# Output: aGVsbG8K
+
+# Raw encoding without padding
+echo "hello" | sttr base64-encode --raw
+echo "hello" | sttr base64-encode -r
+```
+
+## Example: Bcrypt Rounds
+
+The `bcrypt` processor uses an unsigned integer flag from `processors/crypto.go:306-316`:
+
+```go
+func (p Bcrypt) Flags() []Flag {
+	return []Flag{
+		{
+			Name:  "number-of-rounds",
+			Short: "r",
+			Desc:  "Number of rounds",
+			Value: 10,
+			Type:  FlagUint,
+		},
+	}
+}
+```
+
+### Usage:
+
+```bash
+# Default 10 rounds
+echo "password" | sttr bcrypt
+
+# Increase security with more rounds
+echo "password" | sttr bcrypt --number-of-rounds 12
+echo "password" | sttr bcrypt -r 14
+```
+
+<Warning>
+  Higher bcrypt rounds increase security but also increase computation time exponentially.
+</Warning>
+
+## Processors with Flags
+
+Here's a complete list of processors that accept flags:
+
+| Processor | Flags | Description |
+|-----------|-------|-------------|
+| `zeropad` | `-n` (uint), `-p` (string) | Pad numbers with zeros and optional prefix |
+| `escape-quotes` | `-d` (bool), `-s` (bool) | Choose which quotes to escape |
+| `base64-encode` | `-r` (bool) | Use raw/unpadded encoding |
+| `base64-decode` | `-r` (bool) | Decode raw/unpadded base64 |
+| `json` | `-i` (bool) | Indent JSON output |
+| `json-unescape` | `-i` (bool) | Indent unescaped JSON |
+| `yaml-json` | `-i` (bool) | Indent converted JSON |
+| `bcrypt` | `-r` (uint) | Number of hashing rounds |
+
+## Implementing Flags in Custom Processors
+
+To add flags to your own processor:
+
+1. **Define the Flags() method**:
+   ```go
+   func (p MyProcessor) Flags() []Flag {
+       return []Flag{
+           {
+               Name:  "my-option",
+               Short: "o",
+               Desc:  "Description of my option",
+               Value: "default",
+               Type:  FlagString,
+           },
+       }
+   }
+   ```
+
+2. **Read flags in Transform()**:
+   ```go
+   func (p MyProcessor) Transform(data []byte, f ...Flag) (string, error) {
+       var option string
+       for _, flag := range f {
+           if flag.Short == "o" {
+               if val, ok := flag.Value.(string); ok {
+                   option = val
+               }
+           }
+       }
+       // Use the option value...
+   }
+   ```
+
+3. **Return nil if no flags**:
+   ```go
+   func (p SimpleProcessor) Flags() []Flag {
+       return nil
+   }
+   ```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Descriptive Names" icon="tag">
+    Flag names should be clear and use kebab-case: `number-of-zeros` not `numZeros`
+  </Card>
+  
+  <Card title="Single-Char Shortcuts" icon="keyboard">
+    Short flags should be single lowercase letters: `n`, `i`, `r`
+  </Card>
+  
+  <Card title="Sensible Defaults" icon="circle-check">
+    Provide default values that work for most use cases
+  </Card>
+  
+  <Card title="Type Safety" icon="shield">
+    Always use type assertions when reading flag values
+  </Card>
+</CardGroup>
+
+## See Also
+
+- [All Commands](/reference/all-commands) - Complete list of processors
+- [Streaming](/reference/streaming) - How processors handle large files
+- [Processor Interface](/reference/streaming#processor-interface) - Core processor implementation

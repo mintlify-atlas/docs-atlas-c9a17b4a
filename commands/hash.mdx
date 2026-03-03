@@ -1,0 +1,430 @@
+---
+title: Hashing & Checksum Commands
+description: Generate cryptographic hashes and checksums including MD5, SHA, bcrypt, xxHash, BLAKE2, and more
+---
+
+sttr provides various hashing algorithms for checksums, file verification, and password hashing.
+
+## Cryptographic Hashes
+
+### MD5
+
+<Card title="md5" icon="fingerprint">
+  Generate MD5 hash (128-bit)
+</Card>
+
+```bash
+# Generate MD5 hash
+echo -n "password" | sttr md5
+# Output: 5f4dcc3b5aa765d61d8327deb882cf99
+
+# Hash a file
+cat file.txt | sttr md5
+
+# Hash without newline
+echo -n "text" | sttr md5
+```
+
+**Aliases:** `md5-sum`
+
+**Note:** MD5 is not recommended for security-critical applications. Use SHA-256 or higher for better security.
+
+---
+
+### SHA-1
+
+<Card title="sha1" icon="shield">
+  Generate SHA-1 hash (160-bit)
+</Card>
+
+```bash
+# Generate SHA-1 hash
+echo -n "password" | sttr sha1
+# Output: 5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8
+
+# Verify file integrity
+cat download.zip | sttr sha1
+```
+
+**Aliases:** `sha1-sum`
+
+**Note:** SHA-1 is deprecated for security purposes. Use SHA-256 or higher.
+
+---
+
+### SHA-224
+
+<Card title="sha224" icon="shield-halved">
+  Generate SHA-224 hash (224-bit)
+</Card>
+
+```bash
+# Generate SHA-224 hash
+echo -n "password" | sttr sha224
+# Output: d63dc919e201d7bc4c825630d2cf25fdc93d4b2f0d46706d29038d01
+```
+
+**Aliases:** `sha224-sum`
+
+---
+
+### SHA-256
+
+<Card title="sha256" icon="shield-check">
+  Generate SHA-256 hash (256-bit)
+</Card>
+
+```bash
+# Generate SHA-256 hash
+echo -n "password" | sttr sha256
+# Output: 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
+
+# Hash configuration file
+cat config.json | sttr sha256
+
+# Verify download
+cat downloaded.iso | sttr sha256
+# Compare with published checksum
+```
+
+**Aliases:** `sha256-sum`
+
+**Recommended for:** File integrity verification, secure checksums, digital signatures
+
+---
+
+### SHA-384
+
+<Card title="sha384" icon="shield">
+  Generate SHA-384 hash (384-bit)
+</Card>
+
+```bash
+# Generate SHA-384 hash
+echo -n "password" | sttr sha384
+# Output: a8b64babd0aca91a59bdbb7761b421d4f2bb38280d3a75ba0f21f2bebc45583d...
+```
+
+**Aliases:** `sha384-sum`
+
+---
+
+### SHA-512
+
+<Card title="sha512" icon="shield">
+  Generate SHA-512 hash (512-bit)
+</Card>
+
+```bash
+# Generate SHA-512 hash
+echo -n "password" | sttr sha512
+# Output: b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb9...
+
+# Maximum security hashing
+cat sensitive.dat | sttr sha512
+```
+
+**Aliases:** `sha512-sum`
+
+**Recommended for:** High-security applications, long-term integrity verification
+
+---
+
+## Password Hashing
+
+### bcrypt
+
+<Card title="bcrypt" icon="key">
+  Generate bcrypt hash (password hashing)
+</Card>
+
+```bash
+# Generate bcrypt hash (default 10 rounds)
+echo -n "password" | sttr bcrypt
+# Output: $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
+
+# Increase security with more rounds
+echo -n "password" | sttr bcrypt -r 12
+# More computation = more secure
+
+# Production password hashing
+echo -n "user_password" | sttr bcrypt -r 14
+```
+
+**Aliases:** `bcrypt-hash`
+
+**Flags:**
+- `-r, --number-of-rounds` - Computational cost (default: 10, recommended: 10-14)
+
+**Note:** bcrypt is designed for password hashing. Higher rounds = more secure but slower. Each increment doubles the time. Recommended: 12-14 for production.
+
+---
+
+## BLAKE2 Hashing
+
+### BLAKE2b
+
+<Card title="blake2b" icon="bolt">
+  Generate BLAKE2b hash (faster than SHA-2)
+</Card>
+
+```bash
+# Generate BLAKE2b hash (64 bytes default)
+echo -n "data" | sttr blake2b
+# Output: 508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982...
+
+# Custom hash size (1-64 bytes)
+echo -n "data" | sttr blake2b -s 32
+# Output: 32-byte hash
+
+# Minimum size
+echo -n "data" | sttr blake2b -s 1
+```
+
+**Aliases:** `blake2b-hash`, `blake2b-sum`
+
+**Flags:**
+- `-s, --size` - Hash size in bytes (1-64, default: 64)
+
+**Use cases:** High-performance hashing, file integrity, checksums
+
+---
+
+### BLAKE2s
+
+<Card title="blake2s" icon="bolt">
+  Generate BLAKE2s hash (optimized for 8-32 bit platforms)
+</Card>
+
+```bash
+# Generate BLAKE2s hash (32 bytes)
+echo -n "data" | sttr blake2s
+# Output: 24f8...
+
+# Faster alternative to SHA-256
+cat large_file.bin | sttr blake2s
+```
+
+**Aliases:** `blake2s-hash`, `blake2s-sum`
+
+**Use cases:** Embedded systems, mobile devices, general-purpose hashing
+
+---
+
+## xxHash (Fast Non-Cryptographic)
+
+### XXH32
+
+<Card title="xxh-32" icon="gauge-high">
+  Generate XXH32 hash (extremely fast, 32-bit)
+</Card>
+
+```bash
+# Generate XXH32 hash
+echo -n "data" | sttr xxh-32
+# Output: 12345678
+
+# Fast checksums for large files
+cat video.mp4 | sttr xxh-32
+```
+
+**Aliases:** `xxh32`, `xxhash32`, `xxhash-32`
+
+---
+
+### XXH64
+
+<Card title="xxh-64" icon="gauge-high">
+  Generate XXH64 hash (extremely fast, 64-bit)
+</Card>
+
+```bash
+# Generate XXH64 hash
+echo -n "data" | sttr xxh-64
+# Output: 0123456789abcdef
+
+# High-speed checksums
+cat database.sql | sttr xxh-64
+```
+
+**Aliases:** `xxh64`, `xxhash64`, `xxhash-64`
+
+---
+
+### XXH128
+
+<Card title="xxh-128" icon="gauge-high">
+  Generate XXH128 hash (extremely fast, 128-bit)
+</Card>
+
+```bash
+# Generate XXH128 hash
+echo -n "data" | sttr xxh-128
+# Output: 0123456789abcdef0123456789abcdef
+
+# Balance between speed and hash space
+cat archive.tar | sttr xxh-128
+```
+
+**Aliases:** `xxh128`, `xxhash128`, `xxhash-128`
+
+**Note:** xxHash family is NOT cryptographically secure but extremely fast. Use for checksums, hash tables, and data integrity where security is not required.
+
+---
+
+## Checksums
+
+### CRC32
+
+<Card title="crc32" icon="check-double">
+  Generate CRC32 checksum
+</Card>
+
+```bash
+# Generate CRC32 checksum (IEEE polynomial)
+echo -n "data" | sttr crc32
+# Output: 12345678
+
+# Use different polynomial
+echo -n "data" | sttr crc32 -p castagnoli
+echo -n "data" | sttr crc32 -p koopman
+
+# Quick file verification
+cat package.zip | sttr crc32
+```
+
+**Aliases:** `crc32-sum`, `crc32-checksum`
+
+**Flags:**
+- `-p, --polynomial` - CRC32 polynomial (ieee, castagnoli, koopman)
+  - `ieee` - IEEE 802.3 (default, most common)
+  - `castagnoli` - Castagnoli (CRC32C)
+  - `koopman` - Koopman
+
+**Use cases:** Error detection, file integrity, ZIP/PNG formats
+
+---
+
+### Adler32
+
+<Card title="adler32" icon="check">
+  Generate Adler32 checksum
+</Card>
+
+```bash
+# Generate Adler32 checksum
+echo -n "data" | sttr adler32
+# Output: 12345678
+
+# Fast checksum for compression
+cat compressed.gz | sttr adler32
+```
+
+**Aliases:** `adler32-sum`, `adler32-checksum`
+
+**Note:** Faster than CRC32 but less reliable. Used in zlib compression.
+
+---
+
+## Comparison Guide
+
+### For Security (Cryptographic)
+
+<Tabs>
+  <Tab title="Password Hashing">
+    **Use:** `bcrypt`
+    
+    Specifically designed for passwords with adjustable computational cost.
+    
+    ```bash
+    echo -n "password" | sttr bcrypt -r 12
+    ```
+  </Tab>
+  
+  <Tab title="General Purpose">
+    **Use:** `sha256` or `sha512`
+    
+    Industry standard for secure hashing.
+    
+    ```bash
+    echo -n "data" | sttr sha256
+    ```
+  </Tab>
+  
+  <Tab title="High Performance">
+    **Use:** `blake2b` or `blake2s`
+    
+    Faster than SHA-2, still cryptographically secure.
+    
+    ```bash
+    echo -n "data" | sttr blake2b
+    ```
+  </Tab>
+</Tabs>
+
+### For Performance (Non-Cryptographic)
+
+<Tabs>
+  <Tab title="Maximum Speed">
+    **Use:** `xxh-64` or `xxh-128`
+    
+    Extremely fast, good for hash tables and quick checksums.
+    
+    ```bash
+    cat large_file | sttr xxh-64
+    ```
+  </Tab>
+  
+  <Tab title="Error Detection">
+    **Use:** `crc32`
+    
+    Standard for error detection in networking and file formats.
+    
+    ```bash
+    cat file.zip | sttr crc32
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Use Cases
+
+### File Integrity Verification
+
+```bash
+# Download and verify
+curl -O https://example.com/file.iso
+cat file.iso | sttr sha256
+# Compare with published SHA-256 hash
+
+# Quick local verification
+cat backup.tar.gz | sttr xxh-64 > backup.xxh64
+# Later: verify
+cat backup.tar.gz | sttr xxh-64
+cat backup.xxh64
+```
+
+### Password Storage
+
+```bash
+# Hash password for storage (never store plain text!)
+read -s PASSWORD
+echo -n "$PASSWORD" | sttr bcrypt -r 12
+# Store the output hash in database
+```
+
+### Data Deduplication
+
+```bash
+# Generate content hash
+cat document.pdf | sttr sha256
+# Use hash as filename or identifier
+```
+
+### API Signatures
+
+```bash
+# Create HMAC-style signature
+echo -n "timestamp=123&data=value" | sttr sha256
+```

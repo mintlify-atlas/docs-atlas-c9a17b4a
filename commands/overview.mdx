@@ -1,0 +1,143 @@
+---
+title: Command Overview
+description: Complete reference of all sttr string transformation commands
+---
+
+sttr provides a comprehensive set of commands for string transformations, organized into the following categories:
+
+## Command Categories
+
+<CardGroup cols={2}>
+  <Card title="Encode & Decode" icon="code" href="/commands/encode-decode">
+    Base64, Base32, ASCII85, URL, HTML, Hex, Morse, ROT13, and more encoding formats
+  </Card>
+  
+  <Card title="Hashing" icon="fingerprint" href="/commands/hash">
+    MD5, SHA family, bcrypt, xxHash, BLAKE2, CRC32, Adler32 checksums
+  </Card>
+  
+  <Card title="String Cases" icon="text" href="/commands/string-case">
+    camelCase, kebab-case, PascalCase, snake_case, slug, UPPER, lower, Title Case
+  </Card>
+  
+  <Card title="Line Operations" icon="list" href="/commands/lines">
+    Count, reverse, shuffle, sort, unique, and number lines
+  </Card>
+  
+  <Card title="JSON & YAML" icon="brackets-curly" href="/commands/json-yaml">
+    Format, convert between JSON, YAML, and MSGPACK formats
+  </Card>
+  
+  <Card title="Extract Data" icon="magnifying-glass" href="/commands/extract">
+    Extract emails, IP addresses, and URLs from text
+  </Card>
+  
+  <Card title="Other Commands" icon="wrench" href="/commands/other">
+    Count characters/words, remove spaces/newlines, escape quotes, QR codes, and more
+  </Card>
+</CardGroup>
+
+## Quick Examples
+
+### Encoding Text
+
+```bash
+# Encode to Base64
+echo "hello world" | sttr base64-encode
+# aGVsbG8gd29ybGQ=
+
+# URL encode
+echo "hello world" | sttr url-encode
+# hello+world
+```
+
+### Hashing
+
+```bash
+# Generate MD5 hash
+echo "password" | sttr md5
+# 5f4dcc3b5aa765d61d8327deb882cf99
+
+# Generate SHA256 hash
+echo "password" | sttr sha256
+# 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
+```
+
+### Case Transformations
+
+```bash
+# Convert to camelCase
+echo "hello world" | sttr camel
+# helloWorld
+
+# Convert to kebab-case
+echo "Hello World" | sttr kebab
+# hello-world
+```
+
+### Line Operations
+
+```bash
+# Sort lines
+echo -e "zebra\napple\nbanana" | sttr sort-lines
+# apple
+# banana
+# zebra
+
+# Count lines
+echo -e "line 1\nline 2\nline 3" | sttr count-lines
+# 3
+```
+
+### JSON Operations
+
+```bash
+# Format JSON with indentation
+echo '{"name":"John","age":30}' | sttr json -i
+# {
+#   "name": "John",
+#   "age": 30
+# }
+
+# Convert JSON to YAML
+echo '{"name":"John"}' | sttr json-yaml
+# name: John
+```
+
+## Using Commands
+
+All commands follow the same pattern:
+
+```bash
+# Via pipe
+echo "input" | sttr <command> [flags]
+
+# From file
+cat file.txt | sttr <command> [flags]
+
+# Direct input (interactive)
+sttr <command> [flags]
+```
+
+## Common Flags
+
+Many commands support optional flags to customize behavior:
+
+- `-r, --raw` - Use raw/unpadded encoding (Base64)
+- `-i, --indent` - Add indentation to output (JSON)
+- `-s, --separator` - Specify separator character
+- `-n, --number-of-zeros` - Number of zeros to pad (zeropad)
+- `-l, --lang` - Language for Morse code
+
+See individual command pages for specific flag options.
+
+## Command Aliases
+
+Many commands have shorter aliases for convenience:
+
+- `base64-encode` → `b64-enc`, `b64-encode`
+- `url-encode` → `url-enc`
+- `extract-emails` → `find-emails`, `extract-email`
+- `number-lines` → `nl`, `line-numbers`
+
+You can use either the full command name or any of its aliases.

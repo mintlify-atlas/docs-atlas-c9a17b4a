@@ -1,0 +1,490 @@
+---
+title: File Input
+description: Process files efficiently with sttr's streaming and batch capabilities
+icon: 'file'
+---
+
+## Overview
+
+File input mode allows sttr to process files of any size by passing a file path instead of a string. sttr automatically detects files and uses optimized streaming for large files.
+
+```bash
+sttr <processor> <filepath>
+```
+
+## Basic Usage
+
+<CodeGroup>
+```bash Hash a File
+sttr md5 document.txt
+sttr sha256 image.jpg
+sttr sha512 archive.zip
+```
+
+```bash Encode a File
+sttr base64-encode image.png
+sttr base64-encode certificate.pem > cert.b64
+```
+
+```bash Format Configuration Files
+sttr json config.json -i > formatted.json
+sttr yaml-json config.yaml > config.json
+sttr json-yaml data.json > data.yaml
+```
+
+```bash Convert Markdown
+sttr markdown-html README.md > README.html
+```
+</CodeGroup>
+
+## How File Detection Works
+
+Every processor command checks if the argument is a file using `os.Stat()` (from `cmd/processor_md5.go:39-64`):
+
+```go
+// Check if it's a file
+if fi, err := os.Stat(args[0]); err == nil && !fi.IsDir() {
+    // It's a file - check if we should use streaming
+    const largeFileThreshold = 10 * 1024 * 1024 // 10MB
+    
+    if processors.CanStream(p) && (fi.Size() > largeFileThreshold || processors.PreferStream(p)) {
+        // Use streaming for large files or processors that prefer it
+        file, err := os.Open(args[0])
+        if err != nil {
+            return err
+        }
+        defer file.Close()
+        
+        err = processors.TransformStream(p, file, os.Stdout, flags...)
+        return err
+    } else {
+        // Use traditional method for small files
+        d, err := os.ReadFile(args[0])
+        if err != nil {
+            return err
+        }
+        out, err = p.Transform(d, flags...)
+    }
+} else {
+    // Not a file, treat as string input
+    out, err = p.Transform([]byte(args[0]), flags...)
+}
+```
+
+<Note>
+sttr intelligently chooses between streaming and in-memory processing based on file size and processor type.
+</Note>
+
+## Streaming vs In-Memory Processing
+
+### Streaming Processors
+
+Processors that benefit from streaming (defined in `processors/processor.go:242-294`):
+
+**Hash Functions:**
+- `md5`, `sha1`, `sha224`, `sha256`, `sha384`, `sha512`
+- `xxh32`, `xxh64`, `xxh128`
+- `adler32`, `crc32`
+
+**Encoding/Decoding:**
+- `base64-encode`, `base64-decode`
+- `base32-encode`, `base32-decode`
+- `hex-encode`, `hex-decode`
+
+**Case Conversion:**
+- `upper`, `lower`
+
+These processors use **chunked streaming** (64KB chunks by default) for memory efficiency:
+
+```go
+// From processors/processor.go:20-26
+func (p Lower) GetStreamingConfig() StreamingConfig {
+    return StreamingConfig{
+        ChunkSize:    64 * 1024, // 64KB chunks
+        BufferOutput: false,     // Process chunks directly
+        LineByLine:   false,
+    }
+}
+```
+
+### Line-by-Line Processors
+
+Processors that work on lines individually use line-by-line streaming:
+
+- `number-lines`
+- `sort-lines`
+- `reverse-lines`
+- `unique-lines`
+- `shuffle-lines`
+
+### Buffered Processors
+
+Processors that need the complete input (like JSON/YAML converters) read the entire file into memory:
+
+- `json`, `json-yaml`, `yaml-json`
+- `json-escape`, `json-unescape`
+- `count-chars`, `count-words`, `count-lines`
+
+<Warning>
+Buffered processors load the entire file into memory. For files larger than available RAM, consider splitting the file first.
+</Warning>
+
+## Common File Operations
+
+<Tabs>
+  <Tab title="Hashing Files">
+    Generate checksums for file integrity:
+    
+    ```bash
+    # Single file hash
+    sttr md5 document.pdf
+    # 098f6bcd4621d373cade4e832627b4f6
+    
+    # Create checksum file
+    sttr sha256 release.zip > release.zip.sha256
+    
+    # Verify multiple files
+    for file in *.txt; do
+      echo "$file: $(sttr sha256 "$file")"
+    done
+    
+    # Compare hashes
+    HASH1=$(sttr md5 file1.txt)
+    HASH2=$(sttr md5 file2.txt)
+    if [ "$HASH1" = "$HASH2" ]; then
+      echo "Files are identical"
+    fi
+    ```
+  </Tab>
+
+  <Tab title="Encoding Files">
+    Encode files for transmission or embedding:
+    
+    ```bash
+    # Encode image for data URI
+    echo -n "data:image/png;base64," > image-data.txt
+    sttr base64-encode image.png >> image-data.txt
+    
+    # Encode certificate
+    sttr base64-encode cert.der > cert.pem
+    
+    # Decode received file
+    sttr base64-decode encoded.txt > original.bin
+    
+    # Hex dump of binary file
+    sttr hex-encode binary.dat > hexdump.txt
+    ```
+  </Tab>
+
+  <Tab title="Format Conversion">
+    Convert between configuration formats:
+    
+    ```bash
+    # JSON to YAML
+    sttr json-yaml config.json > config.yaml
+    
+    # YAML to JSON (with indent)
+    sttr yaml-json -i config.yaml > config.json
+    
+    # Pretty-print JSON
+    sttr json -i messy.json > formatted.json
+    
+    # Convert MessagePack
+    sttr msgpack-json data.msgpack > data.json
+    sttr json-msgpack data.json > data.msgpack
+    
+    # Markdown to HTML
+    sttr markdown-html README.md > README.html
+    ```
+  </Tab>
+
+  <Tab title="Text Processing">
+    Manipulate file contents:
+    
+    ```bash
+    # Add line numbers
+    sttr number-lines script.py > numbered.py
+    
+    # Sort lines alphabetically
+    sttr sort-lines unsorted.txt > sorted.txt
+    
+    # Remove duplicate lines
+    sttr unique-lines list.txt > unique.txt
+    
+    # Reverse line order
+    sttr reverse-lines log.txt > reversed.log
+    
+    # Count statistics
+    echo "Characters: $(sttr count-chars document.txt)"
+    echo "Words: $(sttr count-words document.txt)"
+    echo "Lines: $(sttr count-lines document.txt)"
+    
+    # URL encode entire file
+    sttr url-encode params.txt > encoded-params.txt
+    ```
+  </Tab>
+</Tabs>
+
+## Working with Large Files
+
+sttr uses a **10MB threshold** to decide when to stream (from `cmd/processor_md5.go:41`):
+
+```go
+const largeFileThreshold = 10 * 1024 * 1024 // 10MB
+```
+
+<Steps>
+  <Step title="Files under 10MB">
+    Loaded entirely into memory for fast processing:
+    ```bash
+    sttr md5 small-file.txt  # < 10MB: in-memory
+    ```
+  </Step>
+
+  <Step title="Files over 10MB">
+    Automatically streamed in chunks:
+    ```bash
+    sttr sha256 large-video.mp4  # > 10MB: streamed
+    ```
+  </Step>
+
+  <Step title="Streaming-preferred processors">
+    Some processors always stream, regardless of size:
+    ```bash
+    sttr md5 tiny.txt  # MD5 prefers streaming even for tiny files
+    ```
+  </Step>
+</Steps>
+
+### Streaming Implementation
+
+The streaming logic (from `processors/processor.go:163-240`) supports three modes:
+
+**1. Chunked Processing:**
+```go
+func transformStreamChunked(processor Processor, reader io.Reader, writer io.Writer, chunkSize int, opts ...Flag) error {
+    buffer := make([]byte, chunkSize)
+    for {
+        n, err := reader.Read(buffer)
+        if n > 0 {
+            result, transformErr := processor.Transform(buffer[:n], opts...)
+            if transformErr != nil {
+                return transformErr
+            }
+            if _, writeErr := writer.Write([]byte(result)); writeErr != nil {
+                return writeErr
+            }
+        }
+        if err == io.EOF {
+            break
+        }
+    }
+    return nil
+}
+```
+
+**2. Line-by-Line Processing:**
+```go
+func transformStreamLineByLine(processor Processor, reader io.Reader, writer io.Writer, opts ...Flag) error {
+    scanner := bufio.NewScanner(reader)
+    for scanner.Scan() {
+        line := scanner.Bytes()
+        result, err := processor.Transform(line, opts...)
+        if err != nil {
+            return err
+        }
+        if _, err := writer.Write([]byte(result + "\n")); err != nil {
+            return err
+        }
+    }
+    return scanner.Err()
+}
+```
+
+**3. Buffered (Full Read):**
+```go
+func transformStreamBuffered(processor Processor, reader io.Reader, writer io.Writer, opts ...Flag) error {
+    data, err := io.ReadAll(reader)
+    if err != nil {
+        return err
+    }
+    result, err := processor.Transform(data, opts...)
+    if err != nil {
+        return err
+    }
+    _, err = writer.Write([]byte(result))
+    return err
+}
+```
+
+## Binary File Support
+
+sttr handles binary files correctly for appropriate processors:
+
+```bash
+# Hash any binary file
+sttr sha256 application.exe
+sttr md5 image.jpg
+sttr xxh64 video.mp4
+
+# Encode binary data
+sttr base64-encode logo.png > logo.b64
+sttr hex-encode firmware.bin > firmware.hex
+
+# Decode back to binary
+sttr base64-decode logo.b64 > logo-decoded.png
+sttr hex-decode firmware.hex > firmware-decoded.bin
+```
+
+<Tip>
+When working with binary files, always redirect output to a file rather than displaying in the terminal:
+
+```bash
+sttr base64-encode image.png > encoded.txt  # ✅ Safe
+sttr base64-encode image.png                # ⚠️  May corrupt terminal
+```
+</Tip>
+
+## Error Handling
+
+```bash
+# File doesn't exist
+sttr md5 nonexistent.txt
+# Error: stat nonexistent.txt: no such file or directory
+
+# Permission denied
+sttr sha256 /root/protected.txt
+# Error: open /root/protected.txt: permission denied
+
+# Directory instead of file
+sttr md5 /home/user/
+# Treats "/home/user/" as a string, not a path
+
+# Invalid JSON file
+sttr json invalid.json
+# Error: invalid character 'x' looking for beginning of value
+```
+
+<Note>
+If a file path doesn't exist or is inaccessible, sttr will treat it as a literal string input instead. Always verify file paths exist before processing.
+</Note>
+
+## Multiple File Processing
+
+Process multiple files using shell loops:
+
+<CodeGroup>
+```bash Hash All Files
+#!/bin/bash
+for file in *.txt; do
+  hash=$(sttr sha256 "$file")
+  echo "$hash  $file"
+done > checksums.txt
+```
+
+```bash Convert All JSON to YAML
+#!/bin/bash
+for json in *.json; do
+  yaml="${json%.json}.yaml"
+  sttr json-yaml "$json" > "$yaml"
+  echo "Converted: $json → $yaml"
+done
+```
+
+```bash Batch Encoding
+#!/bin/bash
+mkdir -p encoded
+for file in images/*.png; do
+  basename=$(basename "$file")
+  sttr base64-encode "$file" > "encoded/${basename}.b64"
+done
+```
+
+```bash Find Duplicate Files
+#!/bin/bash
+declare -A hashes
+for file in *; do
+  [ -f "$file" ] || continue
+  hash=$(sttr md5 "$file")
+  if [ -n "${hashes[$hash]}" ]; then
+    echo "Duplicate: $file == ${hashes[$hash]}"
+  else
+    hashes[$hash]="$file"
+  fi
+done
+```
+</CodeGroup>
+
+## Output Redirection Strategies
+
+```bash
+# Overwrite file
+sttr json -i input.json > output.json
+
+# Append to file
+sttr md5 file1.txt >> hashes.txt
+sttr md5 file2.txt >> hashes.txt
+
+# In-place replacement (be careful!)
+sttr json -i config.json > config.json.tmp && mv config.json.tmp config.json
+
+# Backup before replacing
+cp config.json config.json.bak
+sttr json -i config.json > config.json.tmp && mv config.json.tmp config.json
+
+# Conditional output
+if sttr json -i test.json > /tmp/test.json 2>&1; then
+  mv /tmp/test.json test.json
+  echo "JSON formatted successfully"
+else
+  echo "Invalid JSON, keeping original"
+fi
+```
+
+<Warning>
+**Never** redirect output to the same file you're reading from without using a temporary file:
+
+```bash
+sttr json input.json > input.json  # ❌ Will corrupt the file!
+sttr json input.json > temp.json && mv temp.json input.json  # ✅ Safe
+```
+</Warning>
+
+## Performance Tips
+
+<Tip>
+**For large files (>100MB):**
+- Use streaming-friendly processors (hashes, encoders)
+- Avoid processors that need full input (JSON, YAML)
+- Monitor memory usage with `time -v` on Linux
+</Tip>
+
+<Tip>
+**For batch processing:**
+- Use shell loops for multiple files
+- Consider GNU Parallel for true parallel processing:
+  ```bash
+  parallel sttr sha256 ::: *.txt
+  ```
+</Tip>
+
+<Tip>
+**For repeated operations:**
+- Process files once and cache results
+- Use file checksums to detect changes
+</Tip>
+
+## When to Use File Input
+
+**Best for:**
+- Files of any size
+- Binary files (images, executables)
+- Configuration files (JSON, YAML)
+- Log files and large text documents
+- Batch processing multiple files
+- File integrity checking
+
+**Not ideal for:**
+- Quick tests with small strings (use [direct input](/usage/direct-input))
+- Data from other commands (use [piping](/usage/piping))
+- Multiple transformations on same data (use [chaining](/usage/chaining))
