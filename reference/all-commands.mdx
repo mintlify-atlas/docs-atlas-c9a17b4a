@@ -118,9 +118,9 @@ echo "password" | sttr sha256
 |---------|-------------|
 | `adler32` | Calculate Adler-32 checksum |
 | `crc32` | Calculate CRC-32 checksum |
-| `xxh32` | Calculate xxHash 32-bit |
-| `xxh64` | Calculate xxHash 64-bit |
-| `xxh128` | Calculate xxHash 128-bit |
+| `xxh-32` | Calculate xxHash 32-bit |
+| `xxh-64` | Calculate xxHash 64-bit |
+| `xxh-128` | Calculate xxHash 128-bit |
 
 ### Password Hashing
 
@@ -218,11 +218,11 @@ echo 'He said "hello"' | sttr escape-quotes --double-quote
 
 ## Pattern Extraction
 
-| Command | Description |
-|---------|-------------|
-| `extract-emails` | Extract email addresses from text |
-| `extract-urls` | Extract URLs from text |
-| `extract-ips` | Extract IP addresses from text |
+| Command | Description | Aliases |
+|---------|-------------|---------|
+| `extract-emails` | Extract email addresses from text | `find-emails`, `find-email`, `extract-email` |
+| `extract-url` | Extract URLs from text | `extract-urls`, `url-ext`, `ext-url` |
+| `extract-ip` | Extract IP addresses from text | `extract-ips`, `find-ips`, `find-ip` |
 
 **Example:**
 ```bash
@@ -268,7 +268,7 @@ echo '{"name":"John","age":30}' | sttr json --indent
 
 | Command | Description |
 |---------|-------------|
-| `markdown` | Convert Markdown to HTML |
+| `markdown-html` | Convert Markdown to HTML |
 
 ## Encoding Systems
 
@@ -357,7 +357,7 @@ echo "-42" | sttr zeropad -n 3
   </Accordion>
   
   <Accordion title="Pattern Extraction (3 commands)">
-    extract-emails, extract-urls, extract-ips
+    extract-emails, extract-url (extract-urls), extract-ip (extract-ips)
   </Accordion>
   
   <Accordion title="Other Utilities (10 commands)">
