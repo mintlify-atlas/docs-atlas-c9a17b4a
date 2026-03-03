@@ -1,0 +1,92 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "sttr",
+  "projectDescription": "A cross-platform CLI app to perform various transformation operations on strings",
+  "theme": "aspen",
+  "primaryColor": "#22c55e",
+  "lightColor": "#86efac",
+  "darkColor": "#16a34a",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Usage",
+            "pages": [
+              "usage/interactive-mode",
+              "usage/direct-input",
+              "usage/file-input",
+              "usage/piping",
+              "usage/chaining"
+            ]
+          },
+          {
+            "group": "Commands",
+            "pages": [
+              "commands/overview",
+              "commands/encode-decode",
+              "commands/hash",
+              "commands/string-case",
+              "commands/lines",
+              "commands/json-yaml",
+              "commands/extract",
+              "commands/other"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Command Reference",
+            "pages": [
+              "reference/all-commands",
+              "reference/flags",
+              "reference/streaming"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/architecture",
+              "development/adding-processors",
+              "development/contributing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "80+ string transformation operations including encoding, hashing, and case conversion",
+    "Interactive TUI mode with fuzzy search for discovering operations",
+    "Multiple input methods: direct input, file input, piping, and chaining",
+    "Cross-platform support for Linux, macOS, Windows, and Termux",
+    "Fast streaming processing for large files"
+  ],
+  "publicApiSurface": [
+    "sttr <command> [input]",
+    "sttr (interactive mode)",
+    "ascii85-encode/decode",
+    "base32/base64/base64url encode/decode",
+    "md5, sha1, sha256, sha512, bcrypt",
+    "camel, kebab, pascal, snake, slug, upper, lower, title",
+    "count-lines, count-chars, count-words",
+    "json-yaml, yaml-json, markdown-html",
+    "extract-emails, extract-urls, extract-ip",
+    "hex-encode/decode, hex-rgb",
+    "url-encode/decode, html-encode/decode",
+    "rot13, morse-encode/decode",
+    "zeropad, reverse, shuffle-lines, sort-lines"
+  ]
+}
